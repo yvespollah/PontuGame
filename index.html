@@ -80,7 +80,14 @@
         <p>Projet PontuXL - INFO B317 - IA et programmation symbolique</p>
     </footer>
 
-    <script src="game.js"></script>
-    <script src="bot.js"></script>
+    <script type="module">
+        // Importer et initialiser le jeu
+        import { findBestMove } from './ai_engine.js';
+        
+        // Rendre findBestMove disponible globalement
+        window.findBestMove = findBestMove;
+    </script>
+    <script type="module" src="game.js"></script>
+    <script type="module" src="bot.js"></script>
 </body>
 </html>

@@ -657,7 +657,8 @@ function nextTurn() {
     handlePlayerTurn();
 }
 
-// Simple AI for computer players
+// Fonction qui implémente le tour de l'IA en utilisant l'algorithme Maxⁿ
+// Cette fonction utilise l'algorithme Maxⁿ avec élagage superficiel pour trouver le meilleur coup
 function playAITurn() {
     if (gameState.gameOver) return;
     
@@ -665,86 +666,70 @@ function playAITurn() {
     console.log(`IA joue pour le joueur: ${currentPlayer}`);
     
     try {
-        // 1. Select a random lutin that can move
-        const movableLutins = gameState.lutins[currentPlayer].filter(lutin => {
-            return hasAvailableMoves(lutin.row, lutin.col);
-        });
-        
-        console.log(`Nombre de lutins pouvant bouger: ${movableLutins.length}`);
-        
-        if (movableLutins.length === 0) {
-            console.log(`L'IA ${currentPlayer} n'a pas de mouvements possibles, passe son tour`);
+        // Vérifier si la fonction findBestMove est disponible
+        if (typeof window.findBestMove !== 'function') {
+            console.error("La fonction findBestMove n'est pas disponible. Utilisation d'une IA basique.");
             
-            // Vérifier si le joueur doit être éliminé
-            checkPlayerElimination();
-            
-            // Passer au joueur suivant
-            passerAuJoueurSuivant();
-            return;
-        }
-        
-        // Sélectionner un lutin aléatoire parmi ceux qui peuvent bouger
-        const selectedLutin = movableLutins[Math.floor(Math.random() * movableLutins.length)];
-        console.log(`Lutin sélectionné: [${selectedLutin.row}, ${selectedLutin.col}]`);
-        
-        // Mettre en évidence le lutin sélectionné
-        const lutinElement = document.querySelector(`.lutin[data-row="${selectedLutin.row}"][data-col="${selectedLutin.col}"]`);
-        if (lutinElement) {
-            lutinElement.classList.add('highlight-lutin');
-        }
-        
-        // Attendre 1.5 secondes pour que l'utilisateur voie le lutin sélectionné
-        setTimeout(() => {
-            // 2. Trouver tous les mouvements possibles pour ce lutin
-            const possibleMoves = [];
-            const adjacentCells = [
-                { row: selectedLutin.row - 1, col: selectedLutin.col }, // Haut
-                { row: selectedLutin.row + 1, col: selectedLutin.col }, // Bas
-                { row: selectedLutin.row, col: selectedLutin.col - 1 }, // Gauche
-                { row: selectedLutin.row, col: selectedLutin.col + 1 }  // Droite
-            ];
-            
-            adjacentCells.forEach(cell => {
-                if (cell.row >= 0 && cell.row < BOARD_SIZE && cell.col >= 0 && cell.col < BOARD_SIZE) {
-                    if (isValidMove(selectedLutin.row, selectedLutin.col, cell.row, cell.col)) {
-                        possibleMoves.push(cell);
-                    }
-                }
+            // Utiliser une IA basique si findBestMove n'est pas disponible
+            const movableLutins = gameState.lutins[currentPlayer].filter(lutin => {
+                return hasAvailableMoves(lutin.row, lutin.col);
             });
             
-            console.log(`Nombre de mouvements possibles: ${possibleMoves.length}`);
-            
-            if (possibleMoves.length === 0) {
-                console.log(`Aucun mouvement possible pour ce lutin, passe au joueur suivant`);
+            if (movableLutins.length === 0) {
+                console.log(`L'IA ${currentPlayer} n'a pas de mouvements possibles, passe son tour`);
+                checkPlayerElimination();
                 passerAuJoueurSuivant();
                 return;
             }
             
-            // 3. Choisir un mouvement aléatoire
-            const targetCell = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
-            console.log(`Mouvement choisi: [${targetCell.row}, ${targetCell.col}]`);
+            // Sélectionner un lutin aléatoire qui peut se déplacer
+            const selectedLutin = movableLutins[Math.floor(Math.random() * movableLutins.length)];
             
-            // 4. Déplacer le lutin
-            moveLutin(selectedLutin.row, selectedLutin.col, targetCell.row, targetCell.col);
-            gameState.gamePhase = 'remove';
+            // Trouver toutes les destinations possibles
+            const possibleMoves = [];
+            const directions = [
+                { row: -1, col: 0 }, // Haut
+                { row: 1, col: 0 },  // Bas
+                { row: 0, col: -1 }, // Gauche
+                { row: 0, col: 1 }   // Droite
+            ];
             
-            // Mettre à jour l'interface
-            renderBoard();
-            updateGameInfo();
-            
-            // Mettre en évidence le lutin déplacé
-            const movedLutinElement = document.querySelector(`.lutin[data-row="${targetCell.row}"][data-col="${targetCell.col}"]`);
-            if (movedLutinElement) {
-                movedLutinElement.classList.add('highlight-lutin');
+            for (const dir of directions) {
+                const targetRow = selectedLutin.row + dir.row;
+                const targetCol = selectedLutin.col + dir.col;
+                
+                if (isValidMove(selectedLutin.row, selectedLutin.col, targetRow, targetCol)) {
+                    possibleMoves.push({ row: targetRow, col: targetCol });
+                }
             }
             
-            // 5. Après 2 secondes, retirer un pont aléatoire
+            // Sélectionner une destination aléatoire
+            const targetCell = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
+            
+            // Mettre en évidence le lutin sélectionné
+            const lutinElement = document.querySelector(`.lutin[data-row="${selectedLutin.row}"][data-col="${selectedLutin.col}"]`);
+            if (lutinElement) {
+                lutinElement.classList.add('highlight-lutin');
+            }
+            
+            // Attendre 1.5 secondes pour que l'utilisateur voie le lutin sélectionné
             setTimeout(() => {
-                try {
-                    // Récupérer tous les ponts disponibles
+                // Déplacer le lutin
+                moveLutin(selectedLutin.row, selectedLutin.col, targetCell.row, targetCell.col);
+                
+                // Mettre à jour l'interface
+                renderBoard();
+                
+                // Passer à la phase de suppression de pont
+                gameState.gamePhase = 'remove';
+                updateGameInfo();
+                
+                // Attendre 2 secondes pour que l'utilisateur voie le déplacement
+                setTimeout(() => {
+                    // Trouver tous les ponts disponibles
                     const availableBridges = [];
                     
-                    // Vérifier les ponts horizontaux
+                    // Ponts horizontaux
                     for (let row = 0; row < BOARD_SIZE; row++) {
                         for (let col = 0; col < BOARD_SIZE; col++) {
                             if (gameState.bridges.horizontal[row][col]) {
@@ -753,7 +738,7 @@ function playAITurn() {
                         }
                     }
                     
-                    // Vérifier les ponts verticaux
+                    // Ponts verticaux
                     for (let row = 0; row < BOARD_SIZE; row++) {
                         for (let col = 0; col < BOARD_SIZE; col++) {
                             if (gameState.bridges.vertical[row][col]) {
@@ -762,51 +747,135 @@ function playAITurn() {
                         }
                     }
                     
-                    console.log(`Nombre de ponts disponibles: ${availableBridges.length}`);
+                    // Sélectionner un pont aléatoire
+                    const bridgeToRemove = availableBridges[Math.floor(Math.random() * availableBridges.length)];
                     
-                    // Choisir un pont aléatoire à retirer
-                    if (availableBridges.length > 0) {
-                        const bridgeToRemove = availableBridges[Math.floor(Math.random() * availableBridges.length)];
+                    try {
+                        console.log(`Pont à retirer: type=${bridgeToRemove.type}, position=[${bridgeToRemove.row}, ${bridgeToRemove.col}]`);
                         
                         // Trouver l'élément du pont à retirer pour l'animation
                         let bridgeElement;
+                        
+                        // Coordonnées pour le DOM qui peuvent être différentes des coordonnées logiques
+                        let domRow = bridgeToRemove.row;
+                        let domCol = bridgeToRemove.col;
+                        let bridgeClass = '';
+                        
                         if (bridgeToRemove.type === 'horizontal') {
-                            // Chercher le pont horizontal
-                            const bridgeSelector = `.bridge-horizontal[data-row="${bridgeToRemove.row}"][data-col="${bridgeToRemove.col}"]`;
-                            bridgeElement = document.querySelector(bridgeSelector);
+                            // Pour les ponts horizontaux, essayer plusieurs sélecteurs
+                            const selectors = [
+                                // Sélecteur standard
+                                `.bridge-horizontal[data-row="${domRow}"][data-col="${domCol}"]`,
+                                // Sélecteur pour pont "top"
+                                `.bridge-horizontal.top[data-row="${domRow + 1}"][data-col="${domCol}"]`,
+                                // Sélecteur pour pont "bottom"
+                                `.bridge-horizontal.bottom[data-row="${domRow}"][data-col="${domCol}"]`
+                            ];
                             
-                            // Si on ne trouve pas avec les coordonnées exactes, chercher les ponts top/bottom
-                            if (!bridgeElement) {
-                                const topSelector = `.bridge-horizontal.top[data-row="${bridgeToRemove.row + 1}"][data-col="${bridgeToRemove.col}"]`;
-                                const bottomSelector = `.bridge-horizontal.bottom[data-row="${bridgeToRemove.row}"][data-col="${bridgeToRemove.col}"]`;
-                                bridgeElement = document.querySelector(topSelector) || document.querySelector(bottomSelector);
+                            // Essayer chaque sélecteur jusqu'à trouver un élément
+                            for (const selector of selectors) {
+                                const element = document.querySelector(selector);
+                                if (element) {
+                                    bridgeElement = element;
+                                    bridgeClass = selector.includes('top') ? 'top' : 
+                                                 selector.includes('bottom') ? 'bottom' : '';
+                                    break;
+                                }
                             }
                         } else {
-                            // Chercher le pont vertical
-                            const bridgeSelector = `.bridge-vertical[data-row="${bridgeToRemove.row}"][data-col="${bridgeToRemove.col}"]`;
-                            bridgeElement = document.querySelector(bridgeSelector);
+                            // Pour les ponts verticaux, essayer plusieurs sélecteurs
+                            const selectors = [
+                                // Sélecteur standard
+                                `.bridge-vertical[data-row="${domRow}"][data-col="${domCol}"]`,
+                                // Sélecteur pour pont "left"
+                                `.bridge-vertical.left[data-row="${domRow}"][data-col="${domCol + 1}"]`,
+                                // Sélecteur pour pont "right"
+                                `.bridge-vertical.right[data-row="${domRow}"][data-col="${domCol}"]`
+                            ];
                             
-                            // Si on ne trouve pas avec les coordonnées exactes, chercher les ponts left/right
-                            if (!bridgeElement) {
-                                const leftSelector = `.bridge-vertical.left[data-row="${bridgeToRemove.row}"][data-col="${bridgeToRemove.col + 1}"]`;
-                                const rightSelector = `.bridge-vertical.right[data-row="${bridgeToRemove.row}"][data-col="${bridgeToRemove.col}"]`;
-                                bridgeElement = document.querySelector(leftSelector) || document.querySelector(rightSelector);
+                            // Essayer chaque sélecteur jusqu'à trouver un élément
+                            for (const selector of selectors) {
+                                const element = document.querySelector(selector);
+                                if (element) {
+                                    bridgeElement = element;
+                                    bridgeClass = selector.includes('left') ? 'left' : 
+                                                 selector.includes('right') ? 'right' : '';
+                                    break;
+                                }
                             }
                         }
                         
+                        // Créer un message visuel pour indiquer quel pont va être supprimé
+                        const messageElement = document.createElement('div');
+                        messageElement.className = 'bridge-removal-message';
+                        messageElement.textContent = 'Pont supprimé';
+                        messageElement.style.position = 'absolute';
+                        messageElement.style.color = 'white';
+                        messageElement.style.backgroundColor = 'rgba(231, 76, 60, 0.8)';
+                        messageElement.style.padding = '5px 10px';
+                        messageElement.style.borderRadius = '5px';
+                        messageElement.style.zIndex = '30';
+                        messageElement.style.fontSize = '12px';
+                        messageElement.style.fontWeight = 'bold';
+                        messageElement.style.pointerEvents = 'none';
+                        
                         // Appliquer l'animation au pont avant de le supprimer
                         if (bridgeElement) {
+                            // Positionner le message près du pont
+                            const bridgeRect = bridgeElement.getBoundingClientRect();
+                            const boardRect = document.getElementById('game-board').getBoundingClientRect();
+                            
+                            // Calculer la position relative au plateau de jeu
+                            messageElement.style.left = `${bridgeRect.left - boardRect.left + bridgeRect.width/2 - 50}px`;
+                            messageElement.style.top = `${bridgeRect.top - boardRect.top - 30}px`;
+                            
+                            // Ajouter le message au plateau
+                            document.getElementById('game-board').appendChild(messageElement);
+                            
+                            // Ajouter la classe pour l'animation
                             bridgeElement.classList.add('highlight-bridge');
+                            
+                            // Ajouter une bordure rouge visible pour mieux voir le pont qui va être supprimé
+                            bridgeElement.style.border = '2px solid red';
                             
                             // Attendre que l'animation se termine avant de supprimer réellement le pont
                             setTimeout(() => {
-                                if (bridgeToRemove.type === 'horizontal') {
-                                    gameState.bridges.horizontal[bridgeToRemove.row][bridgeToRemove.col] = false;
-                                    console.log(`IA a retiré un pont ${bridgeToRemove.type} à la position [${bridgeToRemove.row}, ${bridgeToRemove.col}]`);
+                                // Supprimer le message
+                                messageElement.remove();
+                                
+                                // Obtenir les coordonnées du pont à partir de l'élément DOM
+                                const bridgeRowAttr = bridgeElement.getAttribute('data-row');
+                                const bridgeColAttr = bridgeElement.getAttribute('data-col');
+                                const bridgeRow = parseInt(bridgeRowAttr);
+                                const bridgeCol = parseInt(bridgeColAttr);
+                                
+                                // Déterminer le type de pont à partir de la classe
+                                const isBridgeHorizontal = bridgeElement.classList.contains('bridge-horizontal');
+                                const bridgeType = isBridgeHorizontal ? 'horizontal' : 'vertical';
+                                
+                                // Supprimer le pont à l'endroit indiqué visuellement
+                                if (bridgeType === 'horizontal') {
+                                    // Ajuster les coordonnées si nécessaire pour les ponts top/bottom
+                                    let adjustedRow = bridgeRow;
+                                    if (bridgeElement.classList.contains('top')) {
+                                        adjustedRow = bridgeRow - 1;
+                                    }
+                                    
+                                    gameState.bridges.horizontal[adjustedRow][bridgeCol] = false;
+                                    console.log(`Pont horizontal supprimé à [${adjustedRow}, ${bridgeCol}]`);
                                 } else {
-                                    gameState.bridges.vertical[bridgeToRemove.row][bridgeToRemove.col] = false;
-                                    console.log(`IA a retiré un pont ${bridgeToRemove.type} à la position [${bridgeToRemove.row}, ${bridgeToRemove.col}]`);
+                                    // Ajuster les coordonnées si nécessaire pour les ponts left/right
+                                    let adjustedCol = bridgeCol;
+                                    if (bridgeElement.classList.contains('left')) {
+                                        adjustedCol = bridgeCol - 1;
+                                    }
+                                    
+                                    gameState.bridges.vertical[bridgeRow][adjustedCol] = false;
+                                    console.log(`Pont vertical supprimé à [${bridgeRow}, ${adjustedCol}]`);
                                 }
+                                
+                                // Mettre à jour l'interface pour refléter la suppression du pont
+                                renderBoard();
                                 
                                 // Vérifier si un joueur est éliminé
                                 checkPlayerElimination();
@@ -835,8 +904,213 @@ function playAITurn() {
                                 passerAuJoueurSuivant();
                             }, 1000);
                         }
+                    } catch (error) {
+                        console.error("Erreur lors de la suppression du pont:", error);
+                        passerAuJoueurSuivant();
+                    }
+                }, 2000);
+            }, 1500);
+            
+            return;
+        }
+        
+        // Utiliser l'algorithme Maxⁿ pour trouver le meilleur coup
+        const bestMove = window.findBestMove(gameState);
+        
+        // Si aucun mouvement n'est possible, passer au joueur suivant
+        if (!bestMove) {
+            console.log(`L'IA ${currentPlayer} n'a pas de mouvements possibles, passe son tour`);
+            
+            // Vérifier si le joueur doit être éliminé
+            checkPlayerElimination();
+            
+            // Passer au joueur suivant
+            passerAuJoueurSuivant();
+            return;
+        }
+        
+        // Récupérer les informations du meilleur coup
+        const selectedLutin = bestMove.lutin;
+        const targetCell = bestMove.targetCell;
+        const bridgeToRemove = bestMove.bridge;
+        
+        console.log(`Lutin sélectionné: [${selectedLutin.row}, ${selectedLutin.col}]`);
+        console.log(`Destination: [${targetCell.row}, ${targetCell.col}]`);
+        
+        // Mettre en évidence le lutin sélectionné
+        const lutinElement = document.querySelector(`.lutin[data-row="${selectedLutin.row}"][data-col="${selectedLutin.col}"]`);
+        if (lutinElement) {
+            lutinElement.classList.add('highlight-lutin');
+        }
+        
+        // Attendre 1.5 secondes pour que l'utilisateur voie le lutin sélectionné
+        setTimeout(() => {
+            // Déplacer le lutin
+            moveLutin(selectedLutin.row, selectedLutin.col, targetCell.row, targetCell.col);
+            
+            // Passer à la phase de suppression de pont
+            gameState.gamePhase = 'remove';
+            
+            // Mettre à jour l'interface
+            renderBoard();
+            updateGameInfo();
+            
+            // Mettre en évidence le lutin déplacé
+            const movedLutinElement = document.querySelector(`.lutin[data-row="${targetCell.row}"][data-col="${targetCell.col}"]`);
+            if (movedLutinElement) {
+                movedLutinElement.classList.add('highlight-lutin');
+            }
+            
+            // Attendre 2 secondes pour que l'utilisateur voie le déplacement
+            setTimeout(() => {
+                try {
+                    console.log(`Pont à retirer: type=${bridgeToRemove.type}, position=[${bridgeToRemove.row}, ${bridgeToRemove.col}]`);
+                    
+                    // Trouver l'élément du pont à retirer pour l'animation
+                    let bridgeElement;
+                    
+                    // Coordonnées pour le DOM qui peuvent être différentes des coordonnées logiques
+                    let domRow = bridgeToRemove.row;
+                    let domCol = bridgeToRemove.col;
+                    let bridgeClass = '';
+                    
+                    if (bridgeToRemove.type === 'horizontal') {
+                        // Pour les ponts horizontaux, essayer plusieurs sélecteurs
+                        const selectors = [
+                            // Sélecteur standard
+                            `.bridge-horizontal[data-row="${domRow}"][data-col="${domCol}"]`,
+                            // Sélecteur pour pont "top"
+                            `.bridge-horizontal.top[data-row="${domRow + 1}"][data-col="${domCol}"]`,
+                            // Sélecteur pour pont "bottom"
+                            `.bridge-horizontal.bottom[data-row="${domRow}"][data-col="${domCol}"]`
+                        ];
+                        
+                        // Essayer chaque sélecteur jusqu'à trouver un élément
+                        for (const selector of selectors) {
+                            const element = document.querySelector(selector);
+                            if (element) {
+                                bridgeElement = element;
+                                bridgeClass = selector.includes('top') ? 'top' : 
+                                             selector.includes('bottom') ? 'bottom' : '';
+                                break;
+                            }
+                        }
                     } else {
-                        console.log("Aucun pont disponible à retirer");
+                        // Pour les ponts verticaux, essayer plusieurs sélecteurs
+                        const selectors = [
+                            // Sélecteur standard
+                            `.bridge-vertical[data-row="${domRow}"][data-col="${domCol}"]`,
+                            // Sélecteur pour pont "left"
+                            `.bridge-vertical.left[data-row="${domRow}"][data-col="${domCol + 1}"]`,
+                            // Sélecteur pour pont "right"
+                            `.bridge-vertical.right[data-row="${domRow}"][data-col="${domCol}"]`
+                        ];
+                        
+                        // Essayer chaque sélecteur jusqu'à trouver un élément
+                        for (const selector of selectors) {
+                            const element = document.querySelector(selector);
+                            if (element) {
+                                bridgeElement = element;
+                                bridgeClass = selector.includes('left') ? 'left' : 
+                                             selector.includes('right') ? 'right' : '';
+                                break;
+                            }
+                        }
+                    }
+                    
+                    // Créer un message visuel pour indiquer quel pont va être supprimé
+                    const messageElement = document.createElement('div');
+                    messageElement.className = 'bridge-removal-message';
+                    messageElement.textContent = 'Pont supprimé';
+                    messageElement.style.position = 'absolute';
+                    messageElement.style.color = 'white';
+                    messageElement.style.backgroundColor = 'rgba(231, 76, 60, 0.8)';
+                    messageElement.style.padding = '5px 10px';
+                    messageElement.style.borderRadius = '5px';
+                    messageElement.style.zIndex = '30';
+                    messageElement.style.fontSize = '12px';
+                    messageElement.style.fontWeight = 'bold';
+                    messageElement.style.pointerEvents = 'none';
+                    
+                    // Appliquer l'animation au pont avant de le supprimer
+                    if (bridgeElement) {
+                        // Positionner le message près du pont
+                        const bridgeRect = bridgeElement.getBoundingClientRect();
+                        const boardRect = document.getElementById('game-board').getBoundingClientRect();
+                        
+                        // Calculer la position relative au plateau de jeu
+                        messageElement.style.left = `${bridgeRect.left - boardRect.left + bridgeRect.width/2 - 50}px`;
+                        messageElement.style.top = `${bridgeRect.top - boardRect.top - 30}px`;
+                        
+                        // Ajouter le message au plateau
+                        document.getElementById('game-board').appendChild(messageElement);
+                        
+                        // Ajouter la classe pour l'animation
+                        bridgeElement.classList.add('highlight-bridge');
+                        
+                        // Ajouter une bordure rouge visible pour mieux voir le pont qui va être supprimé
+                        bridgeElement.style.border = '2px solid red';
+                        
+                        // Attendre que l'animation se termine avant de supprimer réellement le pont
+                        setTimeout(() => {
+                            // Supprimer le message
+                            messageElement.remove();
+                            
+                            // Obtenir les coordonnées du pont à partir de l'élément DOM
+                            const bridgeRowAttr = bridgeElement.getAttribute('data-row');
+                            const bridgeColAttr = bridgeElement.getAttribute('data-col');
+                            const bridgeRow = parseInt(bridgeRowAttr);
+                            const bridgeCol = parseInt(bridgeColAttr);
+                            
+                            // Déterminer le type de pont à partir de la classe
+                            const isBridgeHorizontal = bridgeElement.classList.contains('bridge-horizontal');
+                            const bridgeType = isBridgeHorizontal ? 'horizontal' : 'vertical';
+                            
+                            // Supprimer le pont à l'endroit indiqué visuellement
+                            if (bridgeType === 'horizontal') {
+                                // Ajuster les coordonnées si nécessaire pour les ponts top/bottom
+                                let adjustedRow = bridgeRow;
+                                if (bridgeElement.classList.contains('top')) {
+                                    adjustedRow = bridgeRow - 1;
+                                }
+                                
+                                gameState.bridges.horizontal[adjustedRow][bridgeCol] = false;
+                                console.log(`Pont horizontal supprimé à [${adjustedRow}, ${bridgeCol}]`);
+                            } else {
+                                // Ajuster les coordonnées si nécessaire pour les ponts left/right
+                                let adjustedCol = bridgeCol;
+                                if (bridgeElement.classList.contains('left')) {
+                                    adjustedCol = bridgeCol - 1;
+                                }
+                                
+                                gameState.bridges.vertical[bridgeRow][adjustedCol] = false;
+                                console.log(`Pont vertical supprimé à [${bridgeRow}, ${adjustedCol}]`);
+                            }
+                            
+                            // Mettre à jour l'interface pour refléter la suppression du pont
+                            renderBoard();
+                            
+                            // Vérifier si un joueur est éliminé
+                            checkPlayerElimination();
+                            
+                            // Passer au joueur suivant après 1 seconde
+                            setTimeout(() => {
+                                passerAuJoueurSuivant();
+                            }, 1000);
+                        }, 1500);
+                    } else {
+                        // Si on ne trouve pas le pont dans le DOM, le supprimer directement
+                        if (bridgeToRemove.type === 'horizontal') {
+                            gameState.bridges.horizontal[bridgeToRemove.row][bridgeToRemove.col] = false;
+                        } else {
+                            gameState.bridges.vertical[bridgeToRemove.row][bridgeToRemove.col] = false;
+                        }
+                        
+                        // Vérifier si un joueur est éliminé
+                        checkPlayerElimination();
+                        
+                        // Mettre à jour l'interface
+                        renderBoard();
                         
                         // Passer au joueur suivant
                         setTimeout(() => {
