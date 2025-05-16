@@ -80,14 +80,13 @@
         <p>Projet PontuXL - INFO B317 - IA et programmation symbolique</p>
     </footer>
 
-    <script type="module">
-        // Importer et initialiser le jeu
-        import { findBestMove } from './ai_engine.js';
-        
-        // Rendre findBestMove disponible globalement
-        window.findBestMove = findBestMove;
-    </script>
-    <script type="module" src="game.js"></script>
-    <script type="module" src="bot.js"></script>
+    <!-- Tau Prolog - Interpréteur Prolog en JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/tau-prolog@0.3.4/modules/core.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tau-prolog@0.3.4/modules/lists.min.js"></script>
+    
+    <!-- Interface Prolog et scripts du jeu -->
+    <script src="prolog_interface.js"></script>
+    <script src="game.js"></script>
+    <script src="bot.js"></script>
 </body>
 </html>

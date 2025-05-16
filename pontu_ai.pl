@@ -5,7 +5,7 @@
 /*                 Intelligence Artificielle pour PontuXL                */
 /*                                                                       */
 /* Module d'IA pour guider les robots (joueurs bleu et rouge)            */
-/* Basé sur les algorithmes de recherche de chemin                       */
+/* Basé sur l'algorithme Maxⁿ avec élagage superficiel                  */
 /*                                                                       */
 /* --------------------------------------------------------------------- */
 
@@ -236,6 +236,183 @@ minimax_min([Coup|Reste], Etat, Joueur, Profondeur, Alpha, Beta, MeilleurCoup, M
 
 /* --------------------------------------------------------------------- */
 /*                                                                       */
+/*                  Algorithme Maxⁿ avec élagage superficiel             */
+/*                                                                       */
+/* --------------------------------------------------------------------- */
+
+% Constantes pour l'algorithme Maxⁿ
+profondeur_max(3).
+evaluation_max(100).
+
+% Structure pour stocker les évaluations des joueurs
+% evaluation(Vert, Bleu, Jaune, Rouge)
+
+% Trouver le meilleur coup avec l'algorithme Maxⁿ
+trouver_meilleur_coup(Etat, MeilleurCoup) :-
+    etat_jeu(_, _, JoueurCourant, JoueursActifs) = Etat,
+    profondeur_max(ProfondeurMax),
+    evaluation_max(EvaluationMax),
+    
+    % Générer tous les coups possibles
+    coups_possibles(Etat, JoueurCourant, Coups),
+    
+    % Si aucun coup n'est possible, retourner aucun_coup
+    (Coups = [] -> 
+        MeilleurCoup = aucun_coup
+    ;
+        % Trouver l'index du joueur courant
+        couleurs_joueurs(Couleurs),
+        nth0(IndexJoueur, Couleurs, JoueurCourant),
+        
+        % Initialiser le meilleur score et le meilleur coup
+        MeilleurScore = -1,
+        
+        % Évaluer chaque coup possible
+        evaluer_coups(Coups, Etat, IndexJoueur, ProfondeurMax, EvaluationMax, MeilleurScore, aucun_coup, MeilleurCoup)
+    ).
+
+% Évaluer tous les coups possibles et trouver le meilleur
+evaluer_coups([], _, _, _, _, MeilleurScore, MeilleurCoup, MeilleurCoup).
+evaluer_coups([Coup|Reste], Etat, IndexJoueur, Profondeur, Borne, MeilleurScore, CoupActuel, MeilleurCoupFinal) :-
+    % Appliquer le coup et obtenir le nouvel état
+    appliquer_coup(Etat, Coup, NouvelEtat),
+    
+    % Évaluer le nouvel état avec Maxⁿ
+    maxn_shallow(NouvelEtat, Profondeur, Borne, Evaluations),
+    
+    % Extraire le score du joueur courant
+    nth0(IndexJoueur, Evaluations, Score),
+    
+    % Mettre à jour le meilleur coup si nécessaire
+    (Score > MeilleurScore ->
+        NouveauMeilleurScore = Score,
+        NouveauMeilleurCoup = Coup
+    ;
+        NouveauMeilleurScore = MeilleurScore,
+        NouveauMeilleurCoup = CoupActuel
+    ),
+    
+    % Continuer avec les coups restants
+    evaluer_coups(Reste, Etat, IndexJoueur, Profondeur, Borne, NouveauMeilleurScore, NouveauMeilleurCoup, MeilleurCoupFinal).
+
+% Algorithme Maxⁿ avec élagage superficiel (Shallow Pruning)
+% maxn_shallow(+Etat, +Profondeur, +Borne, -Evaluations)
+maxn_shallow(Etat, 0, _, Evaluations) :-
+    % Cas de base: évaluer l'état du jeu pour tous les joueurs
+    evaluer_etat_tous_joueurs(Etat, Evaluations).
+
+maxn_shallow(Etat, _, _, Evaluations) :-
+    % Si un seul joueur est actif, c'est un état terminal
+    etat_jeu(_, _, _, JoueursActifs) = Etat,
+    length(JoueursActifs, 1),
+    evaluer_etat_tous_joueurs(Etat, Evaluations).
+
+maxn_shallow(Etat, Profondeur, Borne, Evaluations) :-
+    Profondeur > 0,
+    etat_jeu(Plateau, Ponts, JoueurCourant, JoueursActifs) = Etat,
+    length(JoueursActifs, NbJoueurs),
+    NbJoueurs > 1,
+    
+    % Trouver l'index du joueur courant
+    couleurs_joueurs(Couleurs),
+    nth0(IndexJoueur, Couleurs, JoueurCourant),
+    
+    % Générer tous les coups possibles
+    coups_possibles(Etat, JoueurCourant, Coups),
+    
+    % Si aucun coup n'est possible, passer au joueur suivant
+    (Coups = [] -> 
+        % Créer un nouvel état avec le joueur suivant
+        joueur_suivant(JoueurCourant, JoueursActifs, NouveauJoueur),
+        NouvelEtat = etat_jeu(Plateau, Ponts, NouveauJoueur, JoueursActifs),
+        maxn_shallow(NouvelEtat, Profondeur, Borne, Evaluations)
+    ;
+        % Sinon, explorer les coups possibles
+        NouvelleProf is Profondeur - 1,
+        
+        % Initialiser les évaluations par défaut (tous à 0)
+        length(Couleurs, NbCouleurs),
+        length(EvaluationsDefaut, NbCouleurs),
+        maplist(=(0), EvaluationsDefaut),
+        
+        % Explorer les coups et trouver la meilleure évaluation
+        explorer_coups(Coups, Etat, IndexJoueur, NouvelleProf, Borne, EvaluationsDefaut, Evaluations)
+    ).
+
+% Explorer tous les coups possibles et trouver la meilleure évaluation
+explorer_coups([], _, _, _, _, MeilleuresEvaluations, MeilleuresEvaluations).
+explorer_coups([Coup|Reste], Etat, IndexJoueur, Profondeur, Borne, MeilleuresEvaluations, EvaluationsFinales) :-
+    % Appliquer le coup et obtenir le nouvel état
+    appliquer_coup(Etat, Coup, NouvelEtat),
+    
+    % Évaluer le nouvel état avec Maxⁿ
+    maxn_shallow(NouvelEtat, Profondeur, Borne, Evaluations),
+    
+    % Extraire le score du joueur courant
+    nth0(IndexJoueur, Evaluations, Score),
+    nth0(IndexJoueur, MeilleuresEvaluations, MeilleurScore),
+    
+    % Mettre à jour les meilleures évaluations si nécessaire
+    (Score > MeilleurScore ->
+        NouvellesEvaluations = Evaluations
+    ;
+        NouvellesEvaluations = MeilleuresEvaluations
+    ),
+    
+    % Élagage superficiel (Shallow Pruning)
+    nth0(IndexJoueur, NouvellesEvaluations, NouveauScore),
+    (NouveauScore >= Borne ->
+        EvaluationsFinales = NouvellesEvaluations
+    ;
+        % Continuer avec les coups restants
+        explorer_coups(Reste, Etat, IndexJoueur, Profondeur, Borne, NouvellesEvaluations, EvaluationsFinales)
+    ).
+
+% Évaluer l'état du jeu pour tous les joueurs
+evaluer_etat_tous_joueurs(Etat, Evaluations) :-
+    couleurs_joueurs(Couleurs),
+    length(Couleurs, NbCouleurs),
+    length(Evaluations, NbCouleurs),
+    
+    % Évaluer chaque joueur
+    evaluer_joueurs(Couleurs, Etat, 0, Evaluations),
+    
+    % Normaliser les évaluations pour que leur somme ne dépasse pas evaluation_max
+    normaliser_evaluations(Evaluations).
+
+% Évaluer chaque joueur
+evaluer_joueurs([], _, _, []).
+evaluer_joueurs([Joueur|Reste], Etat, Index, [Score|ResteScores]) :-
+    % Évaluer l'état pour ce joueur
+    etat_jeu(_, _, _, JoueursActifs) = Etat,
+    (member(Joueur, JoueursActifs) ->
+        evaluer_etat(Etat, Joueur, Score)
+    ;
+        % Si le joueur est éliminé, son score est 0
+        Score = 0
+    ),
+    
+    % Passer au joueur suivant
+    NouvelIndex is Index + 1,
+    evaluer_joueurs(Reste, Etat, NouvelIndex, ResteScores).
+
+% Normaliser les évaluations pour que leur somme ne dépasse pas evaluation_max
+normaliser_evaluations(Evaluations) :-
+    evaluation_max(Max),
+    sum_list(Evaluations, Somme),
+    (Somme > Max ->
+        Facteur is Max / Somme,
+        maplist(multiplier(Facteur), Evaluations, _)
+    ;
+        true
+    ).
+
+% Multiplier un nombre par un facteur (utilisé pour la normalisation)
+multiplier(Facteur, Nombre, Resultat) :-
+    Resultat is Nombre * Facteur.
+
+/* --------------------------------------------------------------------- */
+/*                                                                       */
 /*                  Génération et application des coups                  */
 /*                                                                       */
 /* --------------------------------------------------------------------- */
@@ -394,7 +571,7 @@ est_elimine(Plateau, Ponts, Joueur) :-
 /*                                                                       */
 /* --------------------------------------------------------------------- */
 
-% Déterminer le meilleur coup pour un joueur IA
+% Déterminer le meilleur coup pour un joueur IA avec l'algorithme Minimax
 jouer_ia(Etat, Joueur, MeilleurCoup) :-
     % Vérifier que le joueur est bien contrôlé par l'IA
     couleurs_ia(CouleursIA),
@@ -407,7 +584,7 @@ jouer_ia(Etat, Joueur, MeilleurCoup) :-
     % Trouver le meilleur coup avec l'algorithme Minimax
     meilleur_coup(Etat, Joueur, Profondeur, MeilleurCoup).
 
-% Prédicat principal pour obtenir le coup de l'IA
+% Prédicat principal pour obtenir le coup de l'IA avec Minimax
 obtenir_coup_ia(Plateau, Ponts, Joueur, Deplacement, RetirerPont) :-
     % Créer l'état du jeu
     couleurs_joueurs(Couleurs),
@@ -415,6 +592,28 @@ obtenir_coup_ia(Plateau, Ponts, Joueur, Deplacement, RetirerPont) :-
     
     % Obtenir le meilleur coup
     jouer_ia(Etat, Joueur, MeilleurCoup),
+    
+    % Extraire le déplacement et le retrait de pont
+    coup(Deplacement, RetirerPont) = MeilleurCoup.
+
+% Déterminer le meilleur coup pour un joueur IA avec l'algorithme Maxⁿ
+jouer_ia_maxn(Etat, MeilleurCoup) :-
+    % Vérifier que le joueur est bien contrôlé par l'IA
+    etat_jeu(_, _, Joueur, _) = Etat,
+    couleurs_ia(CouleursIA),
+    member(Joueur, CouleursIA),
+    
+    % Trouver le meilleur coup avec l'algorithme Maxⁿ
+    trouver_meilleur_coup(Etat, MeilleurCoup).
+
+% Prédicat principal pour obtenir le coup de l'IA avec Maxⁿ
+obtenir_coup_ia_maxn(Plateau, Ponts, Joueur, Deplacement, RetirerPont) :-
+    % Créer l'état du jeu
+    couleurs_joueurs(Couleurs),
+    Etat = etat_jeu(Plateau, Ponts, Joueur, Couleurs),
+    
+    % Obtenir le meilleur coup avec Maxⁿ
+    jouer_ia_maxn(Etat, MeilleurCoup),
     
     % Extraire le déplacement et le retrait de pont
     coup(Deplacement, RetirerPont) = MeilleurCoup.
