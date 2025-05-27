@@ -666,16 +666,31 @@ async function playAITurn() {
     const currentPlayer = PLAYERS[gameState.currentPlayer];
     console.log(`IA joue pour le joueur: ${currentPlayer}`);
     
+    // Définir un timeout pour éviter que l'IA ne reste bloquée
+    let timeoutTriggered = false;
+    const timeoutId = setTimeout(() => {
+        timeoutTriggered = true;
+        console.warn(`Timeout de l'IA pour le joueur ${currentPlayer}, utilisation de l'IA basique`);
+        useBasicAI();
+    }, 3000); // 3 secondes de timeout
+    
     try {
         // Vérifier si la fonction findBestMove est disponible
         if (typeof window.findBestMove !== 'function') {
             console.error("La fonction findBestMove n'est pas disponible. Utilisation d'une IA basique.");
-            useBasicAI();
+            clearTimeout(timeoutId);
+            if (!timeoutTriggered) useBasicAI();
             return;
         }
         
         // Utiliser l'algorithme Maxⁿ implémenté en Prolog pour trouver le meilleur coup
         const bestMove = await window.findBestMove(gameState);
+        
+        // Annuler le timeout si on a réussi à trouver un coup
+        clearTimeout(timeoutId);
+        
+        // Si le timeout a déjà été déclenché, ne pas continuer
+        if (timeoutTriggered) return;
         
         // Si aucun mouvement n'est possible, passer au joueur suivant
         if (!bestMove) {
@@ -697,8 +712,10 @@ async function playAITurn() {
         executeAIMove(selectedLutin, targetCell, bridgeToRemove);
     } catch (error) {
         console.error("Erreur dans le tour de l'IA:", error);
-        // En cas d'erreur, utiliser l'IA basique
-        useBasicAI();
+        // Annuler le timeout
+        clearTimeout(timeoutId);
+        // En cas d'erreur, utiliser l'IA basique si le timeout n'a pas été déclenché
+        if (!timeoutTriggered) useBasicAI();
     }
 }
 
