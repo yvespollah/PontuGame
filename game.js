@@ -157,9 +157,9 @@ function resetGameState() {
     gameState.selectedLutin = null;
     gameState.gamePhase = 'select';
     gameState.gameOver = false;
-    gameState.activePlayers = [...PLAYERS];
     gameState.lutins = {};
     
+    // Initialiser les lutins pour chaque joueur
     PLAYERS.forEach(player => {
         gameState.lutins[player] = [];
     });
@@ -585,48 +585,163 @@ function moveLutin(fromRow, fromCol, toRow, toCol) {
 
 // Check if any player is eliminated
 function checkPlayerElimination() {
-    let eliminatedPlayers = [];
+    let blockedPlayers = [];
     
+    // Vérifier quels joueurs sont bloqués (ne peuvent plus bouger)
     PLAYERS.forEach(player => {
-        if (gameState.activePlayers.includes(player)) {
-            const isEliminated = gameState.lutins[player].every(lutin => {
-                return !hasAvailableMoves(lutin.row, lutin.col);
-            });
+        // Un joueur est bloqué si tous ses lutins n'ont plus de mouvements possibles
+        const isBlocked = gameState.lutins[player].every(lutin => {
+            return !hasAvailableMoves(lutin.row, lutin.col);
+        });
+        
+        if (isBlocked) {
+            blockedPlayers.push(player);
+            console.log(`Le joueur ${player} est bloqué!`);
             
-            if (isEliminated) {
-                eliminatedPlayers.push(player);
-                console.log(`Le joueur ${player} est éliminé!`);
-            }
+            // Ajouter un effet visuel pour les lutins bloqués
+            gameState.lutins[player].forEach(lutin => {
+                const lutinElement = document.querySelector(`.lutin[data-row="${lutin.row}"][data-col="${lutin.col}"]`);
+                if (lutinElement) {
+                    lutinElement.classList.add('eliminated');
+                }
+            });
         }
     });
     
-    // Remove eliminated players from active players
-    eliminatedPlayers.forEach(player => {
-        gameState.activePlayers = gameState.activePlayers.filter(p => p !== player);
-    });
+    // Si 3 joueurs sont bloqués, le dernier joueur gagne
+    if (blockedPlayers.length === 3) {
+        // Trouver le joueur qui n'est pas bloqué
+        const winner = PLAYERS.find(player => !blockedPlayers.includes(player));
+        if (winner) {
+            handleGameWin(winner);
+            return true;
+        }
+    }
     
-    // Check if game is over
-    if (gameState.activePlayers.length === 1) {
-        const winner = gameState.activePlayers[0];
-        gameState.gameOver = true;
-        
-        // Afficher le message de victoire
-        gameMessage.textContent = `Le joueur ${winner.charAt(0).toUpperCase() + winner.slice(1)} a gagné la partie!`;
-        gameMessage.style.color = getPlayerColor(winner);
-        gameMessage.style.fontWeight = 'bold';
-        gameMessage.style.fontSize = '1.5rem';
-        
-        // Désactiver les interactions avec le plateau
-        disableAllInteractions();
-        
-        // Afficher une boîte de dialogue de victoire
-        showVictoryMessage(winner);
-        
-        console.log(`Le jeu est terminé! Le joueur ${winner} a gagné!`);
+    // Si tous les joueurs sont bloqués, c'est un match nul
+    if (blockedPlayers.length === 4) {
+        handleGameDraw();
         return true;
     }
     
     return false;
+}
+
+// Find connected groups of lutins for a player
+function findConnectedLutinGroups(player) {
+    const lutins = gameState.lutins[player];
+    const visited = new Set();
+    const groups = [];
+    
+    lutins.forEach(lutin => {
+        if (!visited.has(`${lutin.row},${lutin.col}`)) {
+            const group = [];
+            exploreConnectedLutins(lutin, player, visited, group);
+            groups.push(group);
+        }
+    });
+    
+    return groups;
+}
+
+// Helper function to explore connected lutins using DFS
+function exploreConnectedLutins(lutin, player, visited, group) {
+    const key = `${lutin.row},${lutin.col}`;
+    if (visited.has(key)) return;
+    
+    visited.add(key);
+    group.push(lutin);
+    
+    // Check adjacent positions
+    const adjacentPositions = [
+        { row: lutin.row - 1, col: lutin.col }, // Up
+        { row: lutin.row + 1, col: lutin.col }, // Down
+        { row: lutin.row, col: lutin.col - 1 }, // Left
+        { row: lutin.row, col: lutin.col + 1 }  // Right
+    ];
+    
+    adjacentPositions.forEach(pos => {
+        // Check if position is valid and has a bridge connecting to it
+        if (isValidPosition(pos.row, pos.col) && hasBridgeConnection(lutin, pos)) {
+            const adjacentLutin = findLutinAt(pos.row, pos.col, player);
+            if (adjacentLutin) {
+                exploreConnectedLutins(adjacentLutin, player, visited, group);
+            }
+        }
+    });
+}
+
+// Handle game win
+function handleGameWin(winner) {
+    gameState.gameOver = true;
+    
+    // Update game message with animation
+    gameMessage.textContent = `Le joueur ${winner.charAt(0).toUpperCase() + winner.slice(1)} a gagné la partie!`;
+    gameMessage.style.color = getPlayerColor(winner);
+    gameMessage.style.fontWeight = 'bold';
+    gameMessage.style.fontSize = '1.5rem';
+    gameMessage.classList.add('victory-animation');
+    
+    // Highlight winner's lutins
+    gameState.lutins[winner].forEach(lutin => {
+        const lutinElement = document.querySelector(`.lutin[data-row="${lutin.row}"][data-col="${lutin.col}"]`);
+        if (lutinElement) {
+            lutinElement.classList.add('winner');
+        }
+    });
+    
+    // Disable board interactions
+    disableAllInteractions();
+    
+    // Show victory message
+    showVictoryMessage(winner);
+    
+    console.log(`Le jeu est terminé! Le joueur ${winner} a gagné!`);
+}
+
+// Handle game draw
+function handleGameDraw() {
+    gameState.gameOver = true;
+    
+    // Update game message
+    gameMessage.textContent = 'Match nul! Tous les joueurs sont bloqués!';
+    gameMessage.style.color = '#2c3e50';
+    gameMessage.style.fontWeight = 'bold';
+    gameMessage.style.fontSize = '1.5rem';
+    
+    // Disable board interactions
+    disableAllInteractions();
+    
+    // Show draw message
+    showDrawMessage();
+    
+    console.log('Le jeu est terminé en match nul!');
+}
+
+// Helper function to check if position is valid
+function isValidPosition(row, col) {
+    return row >= 0 && row < BOARD_SIZE && col >= 0 && col < BOARD_SIZE;
+}
+
+// Helper function to check if there's a bridge connection between two positions
+function hasBridgeConnection(pos1, pos2) {
+    if (pos1.row === pos2.row) {
+        // Horizontal connection
+        const col = Math.min(pos1.col, pos2.col);
+        return gameState.bridges.vertical[pos1.row][col];
+    } else if (pos1.col === pos2.col) {
+        // Vertical connection
+        const row = Math.min(pos1.row, pos2.row);
+        return gameState.bridges.horizontal[row][pos1.col];
+    }
+    return false;
+}
+
+// Helper function to find a lutin at a specific position
+function findLutinAt(row, col, player) {
+    return gameState.lutins[player].find(lutin => 
+        lutin.row === row && lutin.col === col
+    );
 }
 
 // Check if a lutin has any available moves
@@ -683,15 +798,33 @@ function nextTurn() {
 }
 
 // Fonction qui implémente le tour de l'IA
-// Utilise directement l'IA basique pour éviter les blocages
 async function playAITurn() {
     if (gameState.gameOver) return;
     
     const currentPlayer = PLAYERS[gameState.currentPlayer];
     console.log(`IA joue pour le joueur: ${currentPlayer}`);
     
-    // Utiliser directement l'IA basique pour éviter les blocages
-    useBasicAI();
+    // Créer un timeout de 3 secondes
+    const timeoutPromise = new Promise((resolve) => {
+        setTimeout(() => resolve('timeout'), 3000);
+    });
+    
+    try {
+        // Essayer d'obtenir un coup de l'IA Prolog avec un timeout
+        const result = await Promise.race([
+            timeoutPromise,
+            // Ici on pourrait appeler l'IA Prolog si elle était implémentée
+            new Promise(resolve => resolve('timeout')) // Pour l'instant, on force le timeout
+        ]);
+        
+        if (result === 'timeout') {
+            console.log('IA prend trop de temps, joue un coup aléatoire');
+            useBasicAI();
+        }
+    } catch (error) {
+        console.log('Erreur avec l\'IA, joue un coup aléatoire');
+        useBasicAI();
+    }
 }
 
 // Fonction pour exécuter le mouvement de l'IA
@@ -1053,19 +1186,12 @@ function showVictoryMessage(winner) {
     
     // Message principal
     const victoryMessage = document.createElement('p');
-    victoryMessage.textContent = `Le joueur ${winner.charAt(0).toUpperCase() + winner.slice(1)} a gagné la partie !`;
-    victoryMessage.style.fontSize = '1.5rem';
+    victoryMessage.textContent = `Le joueur ${winner.charAt(0).toUpperCase() + winner.slice(1)} remporte la partie !`;
     
     // Bouton pour rejouer
     const replayButton = document.createElement('button');
     replayButton.textContent = 'Nouvelle Partie';
     replayButton.className = 'victory-button';
-    replayButton.addEventListener('click', () => {
-        // Supprimer l'overlay de victoire
-        document.body.removeChild(victoryOverlay);
-        // Réinitialiser le jeu
-        initGame();
-    });
     
     // Assembler le contenu
     victoryContent.appendChild(victoryTitle);
@@ -1073,6 +1199,54 @@ function showVictoryMessage(winner) {
     victoryContent.appendChild(replayButton);
     victoryOverlay.appendChild(victoryContent);
     
-    // Ajouter l'overlay au body
+    // Ajouter l'overlay au body avec animation
     document.body.appendChild(victoryOverlay);
+    setTimeout(() => victoryOverlay.classList.add('show'), 50);
+    replayButton.addEventListener('click', () => {
+        // Supprimer l'overlay de victoire
+        document.body.removeChild(victoryOverlay);
+        // Réinitialiser le jeu
+        initGame();
+    });
+}
+
+// Afficher un message de match nul
+function showDrawMessage() {
+    // Créer un élément pour le message de match nul
+    const drawOverlay = document.createElement('div');
+    drawOverlay.className = 'victory-overlay'; // Réutiliser les styles de victory
+    
+    // Créer le contenu du message
+    const drawContent = document.createElement('div');
+    drawContent.className = 'victory-content';
+    
+    // Titre du message
+    const drawTitle = document.createElement('h2');
+    drawTitle.textContent = 'Match Nul !';
+    drawTitle.style.color = '#2c3e50';
+    
+    // Message principal
+    const drawMessage = document.createElement('p');
+    drawMessage.textContent = 'Tous les joueurs sont bloqués. La partie se termine en match nul !';
+    
+    // Bouton pour rejouer
+    const replayButton = document.createElement('button');
+    replayButton.textContent = 'Nouvelle Partie';
+    replayButton.className = 'victory-button';
+    replayButton.addEventListener('click', () => {
+        // Supprimer l'overlay de match nul
+        document.body.removeChild(drawOverlay);
+        // Réinitialiser le jeu
+        initGame();
+    });
+    
+    // Assembler le contenu
+    drawContent.appendChild(drawTitle);
+    drawContent.appendChild(drawMessage);
+    drawContent.appendChild(replayButton);
+    drawOverlay.appendChild(drawContent);
+    
+    // Ajouter l'overlay au body avec animation
+    document.body.appendChild(drawOverlay);
+    setTimeout(() => drawOverlay.classList.add('show'), 50);
 }
