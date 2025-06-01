@@ -1,5 +1,5 @@
 /**
- * PontuXL Game Logic
+ * PontuXL Game Logic - Corrected Version
  * This file contains the main game logic for the PontuXL game
  * L'IA utilise l'algorithme Maxⁿ avec élagage superficiel implémenté en Prolog
  */
@@ -37,109 +37,141 @@ const closeModalButton = document.querySelector('.close');
 
 // Initialize the game
 function initGame() {
-    // Create the board structure
-    createBoard();
-    
-    // Initialize game state
-    resetGameState();
-    
-    // Place lutins on the board
-    placeLutins();
-    
-    // Render the initial board state
-    renderBoard();
-    
-    // Update UI
-    updateGameInfo();
-    
-    // Activer les lutins du premier joueur (vert)
-    enableHumanPlayerLutins();
+    try {
+        // Create the board structure
+        createBoard();
+        
+        // Initialize game state
+        resetGameState();
+        
+        // Place lutins on the board
+        placeLutins();
+        
+        // Render the initial board state
+        renderBoard();
+
+        // Update game info
+        updateGameInfo();
+
+        // Enable interactions for human players
+        if (HUMAN_PLAYERS.includes(PLAYERS[gameState.currentPlayer])) {
+            enableHumanPlayerLutins();
+        }
+
+        // Clear any error messages
+        if (gameMessage) {
+            gameMessage.textContent = '';
+            gameMessage.style.color = '';
+            gameMessage.style.fontWeight = '';
+            gameMessage.style.fontSize = '';
+        }
+    } catch (error) {
+        console.error('Erreur lors de l\'initialisation du jeu:', error);
+        if (gameMessage) {
+            gameMessage.textContent = 'Erreur de chargement. Veuillez rafraîchir la page.';
+            gameMessage.style.color = 'red';
+        }
+    }
 }
 
 // Create the board structure
 function createBoard() {
-    gameBoard.innerHTML = '';
-    
-    // Create cells
-    for (let row = 0; row < BOARD_SIZE; row++) {
-        for (let col = 0; col < BOARD_SIZE; col++) {
-            const cell = document.createElement('div');
-            cell.className = 'cell';
-            cell.dataset.row = row;
-            cell.dataset.col = col;
-            cell.addEventListener('click', handleCellClick);
-            gameBoard.appendChild(cell);
-            
-            // Create horizontal bridges (top and bottom of each cell)
-            if (row > 0) {
-                const hBridge = document.createElement('div');
-                hBridge.className = 'bridge bridge-horizontal top';
-                hBridge.dataset.row = row;
-                hBridge.dataset.col = col;
-                hBridge.dataset.type = 'horizontal';
-                hBridge.dataset.position = 'top';
-                
-                // Ajouter l'événement de clic directement
-                hBridge.addEventListener('click', function(event) {
-                    console.log("Clic sur pont horizontal top");
-                    handleBridgeClick(event);
-                });
-                
-                cell.appendChild(hBridge);
-            }
-            
-            if (row < BOARD_SIZE - 1) {
-                const hBridge = document.createElement('div');
-                hBridge.className = 'bridge bridge-horizontal bottom';
-                hBridge.dataset.row = row;
-                hBridge.dataset.col = col;
-                hBridge.dataset.type = 'horizontal';
-                hBridge.dataset.position = 'bottom';
-                
-                // Ajouter l'événement de clic directement
-                hBridge.addEventListener('click', function(event) {
-                    console.log("Clic sur pont horizontal bottom");
-                    handleBridgeClick(event);
-                });
-                
-                cell.appendChild(hBridge);
-            }
-            
-            // Create vertical bridges (left and right of each cell)
-            if (col > 0) {
-                const vBridge = document.createElement('div');
-                vBridge.className = 'bridge bridge-vertical left';
-                vBridge.dataset.row = row;
-                vBridge.dataset.col = col;
-                vBridge.dataset.type = 'vertical';
-                vBridge.dataset.position = 'left';
-                
-                // Ajouter l'événement de clic directement
-                vBridge.addEventListener('click', function(event) {
-                    console.log("Clic sur pont vertical left");
-                    handleBridgeClick(event);
-                });
-                
-                cell.appendChild(vBridge);
-            }
-            
-            if (col < BOARD_SIZE - 1) {
-                const vBridge = document.createElement('div');
-                vBridge.className = 'bridge bridge-vertical right';
-                vBridge.dataset.row = row;
-                vBridge.dataset.col = col;
-                vBridge.dataset.type = 'vertical';
-                vBridge.dataset.position = 'right';
-                
-                // Ajouter l'événement de clic directement
-                vBridge.addEventListener('click', function(event) {
-                    console.log("Clic sur pont vertical right");
-                    handleBridgeClick(event);
-                });
-                
-                cell.appendChild(vBridge);
+    if (!gameBoard) {
+        throw new Error('Élément game-board non trouvé dans le DOM');
+    }
+
+    try {
+        gameBoard.innerHTML = '';
+        
+        // Create cells
+        for (let row = 0; row < BOARD_SIZE; row++) {
+            for (let col = 0; col < BOARD_SIZE; col++) {
+                try {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.dataset.row = row;
+                    cell.dataset.col = col;
+                    cell.addEventListener('click', handleCellClick);
+                    gameBoard.appendChild(cell);
+                    
+                    // Create horizontal bridges (top and bottom of each cell)
+                    if (row > 0) {
+                        const hBridge = document.createElement('div');
+                        hBridge.className = 'bridge bridge-horizontal top';
+                        hBridge.dataset.row = row;
+                        hBridge.dataset.col = col;
+                        hBridge.dataset.type = 'horizontal';
+                        hBridge.dataset.position = 'top';
+                        
+                        // Ajouter l'événement de clic directement
+                        hBridge.addEventListener('click', function(event) {
+                            console.log("Clic sur pont horizontal top");
+                            handleBridgeClick(event);
+                        });
+                        
+                        cell.appendChild(hBridge);
+                    }
+                    
+                    if (row < BOARD_SIZE - 1) {
+                        const hBridge = document.createElement('div');
+                        hBridge.className = 'bridge bridge-horizontal bottom';
+                        hBridge.dataset.row = row;
+                        hBridge.dataset.col = col;
+                        hBridge.dataset.type = 'horizontal';
+                        hBridge.dataset.position = 'bottom';
+                        
+                        // Ajouter l'événement de clic directement
+                        hBridge.addEventListener('click', function(event) {
+                            console.log("Clic sur pont horizontal bottom");
+                            handleBridgeClick(event);
+                        });
+                        
+                        cell.appendChild(hBridge);
+                    }
+                    
+                    // Create vertical bridges (left and right of each cell)
+                    if (col > 0) {
+                        const vBridge = document.createElement('div');
+                        vBridge.className = 'bridge bridge-vertical left';
+                        vBridge.dataset.row = row;
+                        vBridge.dataset.col = col;
+                        vBridge.dataset.type = 'vertical';
+                        vBridge.dataset.position = 'left';
+                        
+                        // Ajouter l'événement de clic directement
+                        vBridge.addEventListener('click', function(event) {
+                            console.log("Clic sur pont vertical left");
+                            handleBridgeClick(event);
+                        });
+                        
+                        cell.appendChild(vBridge);
+                    }
+                    
+                    if (col < BOARD_SIZE - 1) {
+                        const vBridge = document.createElement('div');
+                        vBridge.className = 'bridge bridge-vertical right';
+                        vBridge.dataset.row = row;
+                        vBridge.dataset.col = col;
+                        vBridge.dataset.type = 'vertical';
+                        vBridge.dataset.position = 'right';
+                        
+                        // Ajouter l'événement de clic directement
+                        vBridge.addEventListener('click', function(event) {
+                            console.log("Clic sur pont vertical right");
+                            handleBridgeClick(event);
+                        });
+                        
+                        cell.appendChild(vBridge);
+                    }
+                } catch (error) {
+                    console.error(`Erreur lors de la création de la cellule [${row},${col}]:`, error);
+                    throw error;
+                }
             }
         }
+    } catch (error) {
+        console.error('Erreur lors de la création du plateau:', error);
+        throw error;
     }
 }
 
@@ -148,9 +180,9 @@ function resetGameState() {
     // Initialize board
     gameState.board = Array(BOARD_SIZE).fill().map(() => Array(BOARD_SIZE).fill(null));
     
-    // Initialize bridges
-    gameState.bridges.horizontal = Array(BOARD_SIZE).fill().map(() => Array(BOARD_SIZE).fill(true));
-    gameState.bridges.vertical = Array(BOARD_SIZE).fill().map(() => Array(BOARD_SIZE).fill(true));
+    // Initialize bridges - CORRECTED: proper dimensions for bridges
+    gameState.bridges.horizontal = Array(BOARD_SIZE - 1).fill().map(() => Array(BOARD_SIZE).fill(true));
+    gameState.bridges.vertical = Array(BOARD_SIZE).fill().map(() => Array(BOARD_SIZE - 1).fill(true));
     
     // Reset game variables
     gameState.currentPlayer = 0;
@@ -227,7 +259,7 @@ function renderBoard() {
                 const currentPlayer = PLAYERS[gameState.currentPlayer];
                 if (color === currentPlayer && HUMAN_PLAYERS.includes(currentPlayer)) {
                     lutin.addEventListener('click', handleLutinClick);
-                    lutin.style.cursor = 'pointer'; // Changer le curseur pour indiquer que le lutin est cliquable
+                    lutin.style.cursor = 'pointer';
                 }
                 
                 cell.appendChild(lutin);
@@ -266,13 +298,8 @@ function updateBridgesVisibility() {
                     // Ajouter l'événement de clic si nous sommes en phase de suppression de pont
                     if (isVisible && gameState.gamePhase === 'remove' && HUMAN_PLAYERS.includes(PLAYERS[gameState.currentPlayer])) {
                         bridge.style.cursor = 'pointer';
-                        
-                        // Cloner pour supprimer les événements existants
-                        const newBridge = bridge.cloneNode(true);
-                        bridge.parentNode.replaceChild(newBridge, bridge);
-                        
-                        // Ajouter le nouvel événement de clic
-                        newBridge.addEventListener('click', handleBridgeClick);
+                    } else {
+                        bridge.style.cursor = 'default';
                     }
                 }
             }
@@ -287,13 +314,8 @@ function updateBridgesVisibility() {
                     // Ajouter l'événement de clic si nous sommes en phase de suppression de pont
                     if (isVisible && gameState.gamePhase === 'remove' && HUMAN_PLAYERS.includes(PLAYERS[gameState.currentPlayer])) {
                         bridge.style.cursor = 'pointer';
-                        
-                        // Cloner pour supprimer les événements existants
-                        const newBridge = bridge.cloneNode(true);
-                        bridge.parentNode.replaceChild(newBridge, bridge);
-                        
-                        // Ajouter le nouvel événement de clic
-                        newBridge.addEventListener('click', handleBridgeClick);
+                    } else {
+                        bridge.style.cursor = 'default';
                     }
                 }
             }
@@ -308,13 +330,8 @@ function updateBridgesVisibility() {
                     // Ajouter l'événement de clic si nous sommes en phase de suppression de pont
                     if (isVisible && gameState.gamePhase === 'remove' && HUMAN_PLAYERS.includes(PLAYERS[gameState.currentPlayer])) {
                         bridge.style.cursor = 'pointer';
-                        
-                        // Cloner pour supprimer les événements existants
-                        const newBridge = bridge.cloneNode(true);
-                        bridge.parentNode.replaceChild(newBridge, bridge);
-                        
-                        // Ajouter le nouvel événement de clic
-                        newBridge.addEventListener('click', handleBridgeClick);
+                    } else {
+                        bridge.style.cursor = 'default';
                     }
                 }
             }
@@ -329,13 +346,8 @@ function updateBridgesVisibility() {
                     // Ajouter l'événement de clic si nous sommes en phase de suppression de pont
                     if (isVisible && gameState.gamePhase === 'remove' && HUMAN_PLAYERS.includes(PLAYERS[gameState.currentPlayer])) {
                         bridge.style.cursor = 'pointer';
-                        
-                        // Cloner pour supprimer les événements existants
-                        const newBridge = bridge.cloneNode(true);
-                        bridge.parentNode.replaceChild(newBridge, bridge);
-                        
-                        // Ajouter le nouvel événement de clic
-                        newBridge.addEventListener('click', handleBridgeClick);
+                    } else {
+                        bridge.style.cursor = 'default';
                     }
                 }
             }
@@ -345,6 +357,10 @@ function updateBridgesVisibility() {
 
 // Update game information display
 function updateGameInfo() {
+    if (!currentPlayerDisplay || !gameMessage) {
+        return;
+    }
+    
     const currentPlayer = PLAYERS[gameState.currentPlayer];
     currentPlayerDisplay.textContent = currentPlayer.charAt(0).toUpperCase() + currentPlayer.slice(1);
     currentPlayerDisplay.style.color = getPlayerColor(currentPlayer);
@@ -497,39 +513,23 @@ function handleBridgeClick(event) {
         
         console.log(`Coordonnées du pont à supprimer: row=${bridgeRow}, col=${bridgeCol}`);
         
-        // Supprimer le pont
-        if (type === 'horizontal') {
+        // Vérifier que les coordonnées sont valides
+        if (type === 'horizontal' && bridgeRow >= 0 && bridgeRow < BOARD_SIZE - 1 && bridgeCol >= 0 && bridgeCol < BOARD_SIZE) {
             gameState.bridges.horizontal[bridgeRow][bridgeCol] = false;
             console.log(`Pont horizontal supprimé à [${bridgeRow}, ${bridgeCol}]`);
-        } else {
+        } else if (type === 'vertical' && bridgeRow >= 0 && bridgeRow < BOARD_SIZE && bridgeCol >= 0 && bridgeCol < BOARD_SIZE - 1) {
             gameState.bridges.vertical[bridgeRow][bridgeCol] = false;
             console.log(`Pont vertical supprimé à [${bridgeRow}, ${bridgeCol}]`);
+        } else {
+            console.log("Coordonnées de pont invalides, suppression annulée");
+            return;
         }
         
         // Vérifier si un joueur est éliminé
         checkPlayerElimination();
         
         // Passer au joueur suivant
-        gameState.gamePhase = 'select';
-        gameState.selectedLutin = null;
-        gameState.currentPlayer = (gameState.currentPlayer + 1) % PLAYERS.length;
-        
-        // Si le joueur suivant n'est pas actif, passer au suivant
-        while (!gameState.activePlayers.includes(PLAYERS[gameState.currentPlayer])) {
-            gameState.currentPlayer = (gameState.currentPlayer + 1) % PLAYERS.length;
-        }
-        
-        // Mettre à jour l'interface
-        renderBoard();
-        updateGameInfo();
-        
-        // Vérifier si le joueur suivant est humain ou IA
-        const nextPlayer = PLAYERS[gameState.currentPlayer];
-        if (AI_PLAYERS.includes(nextPlayer) && !gameState.gameOver) {
-            setTimeout(playAITurn, 3000);
-        } else {
-            enableHumanPlayerLutins();
-        }
+        nextTurn();
     } else {
         console.log(`Phase actuelle: ${gameState.gamePhase}, pas en phase de suppression de pont`);
     }
@@ -537,6 +537,11 @@ function handleBridgeClick(event) {
 
 // Check if a move is valid
 function isValidMove(fromRow, fromCol, toRow, toCol) {
+    // Check bounds
+    if (toRow < 0 || toRow >= BOARD_SIZE || toCol < 0 || toCol >= BOARD_SIZE) {
+        return false;
+    }
+    
     // Check if target cell is empty
     if (gameState.board[toRow][toCol] !== null) {
         return false;
@@ -611,10 +616,12 @@ function checkPlayerElimination() {
         gameState.gameOver = true;
         
         // Afficher le message de victoire
-        gameMessage.textContent = `Le joueur ${winner.charAt(0).toUpperCase() + winner.slice(1)} a gagné la partie!`;
-        gameMessage.style.color = getPlayerColor(winner);
-        gameMessage.style.fontWeight = 'bold';
-        gameMessage.style.fontSize = '1.5rem';
+        if (gameMessage) {
+            gameMessage.textContent = `Le joueur ${winner.charAt(0).toUpperCase() + winner.slice(1)} a gagné la partie!`;
+            gameMessage.style.color = getPlayerColor(winner);
+            gameMessage.style.fontWeight = 'bold';
+            gameMessage.style.fontSize = '1.5rem';
+        }
         
         // Désactiver les interactions avec le plateau
         disableAllInteractions();
@@ -666,10 +673,10 @@ function nextTurn() {
     gameState.gamePhase = 'select';
     gameState.selectedLutin = null;
     
-    // Passer au joueur suivant avec modulo
+    // Move to next player
     gameState.currentPlayer = (gameState.currentPlayer + 1) % PLAYERS.length;
     
-    // Si le joueur suivant n'est pas actif, passer au suivant
+    // Skip eliminated players
     while (!gameState.activePlayers.includes(PLAYERS[gameState.currentPlayer])) {
         gameState.currentPlayer = (gameState.currentPlayer + 1) % PLAYERS.length;
     }
@@ -682,7 +689,6 @@ function nextTurn() {
     handlePlayerTurn();
 }
 
-// Fonction qui implémente le tour de l'IA
 // Utilise directement l'IA basique pour éviter les blocages
 async function playAITurn() {
     if (gameState.gameOver) return;
@@ -690,155 +696,218 @@ async function playAITurn() {
     const currentPlayer = PLAYERS[gameState.currentPlayer];
     console.log(`IA joue pour le joueur: ${currentPlayer}`);
     
-    // Utiliser directement l'IA basique pour éviter les blocages
-    useBasicAI();
+    // Créer une promesse qui sera résolue soit par l'IA, soit par le timeout
+    const aiPromise = new Promise((resolve) => {
+        // Essayer d'utiliser l'IA Prolog
+        try {
+            // Appeler l'IA Prolog ici
+            resolve(useBasicAI());
+        } catch (error) {
+            console.error('Erreur avec l\'IA Prolog:', error);
+            resolve(false);
+        }
+    });
+    
+    // Créer une promesse de timeout
+    const timeoutPromise = new Promise((resolve) => {
+        setTimeout(() => {
+            resolve('timeout');
+        }, 5000); // 5 secondes
+    });
+    
+    // Utiliser Promise.race pour voir quelle promesse se termine en premier
+    const result = await Promise.race([aiPromise, timeoutPromise]);
+    
+    if (result === 'timeout') {
+        console.log('L\'IA a pris trop de temps, on joue un coup aléatoire');
+        // Jouer un coup aléatoire
+        playRandomMove();
+    }
 }
 
-// Fonction pour exécuter le mouvement de l'IA
-function executeAIMove(selectedLutin, targetCell, bridgeToRemove) {
-    // Mettre en évidence le lutin sélectionné
-    const lutinElement = document.querySelector(`.lutin[data-row="${selectedLutin.row}"][data-col="${selectedLutin.col}"]`);
-    if (lutinElement) {
-        lutinElement.classList.add('highlight-lutin');
+// Fonction pour jouer un coup aléatoire
+function playRandomMove() {
+    const currentPlayer = PLAYERS[gameState.currentPlayer];
+    const lutins = gameState.lutins[currentPlayer];
+    
+    // Trouver un lutin qui peut bouger
+    let validLutin = null;
+    let validMoves = [];
+    
+    for (const lutin of lutins) {
+        const moves = getValidMoves(lutin.row, lutin.col);
+        if (moves.length > 0) {
+            validLutin = lutin;
+            validMoves = moves;
+            break;
+        }
     }
     
-    // Attendre 1.5 secondes pour que l'utilisateur voie le lutin sélectionné
-    setTimeout(() => {
-        // Déplacer le lutin
-        moveLutin(selectedLutin.row, selectedLutin.col, targetCell.row, targetCell.col);
+            if (validLutin && validMoves.length > 0) {
+        // Choisir un mouvement aléatoire
+        const randomMove = validMoves[Math.floor(Math.random() * validMoves.length)];
         
-        // Passer à la phase de suppression de pont
-        gameState.gamePhase = 'remove';
+        // Déplacer le lutin
+        moveLutin(validLutin.row, validLutin.col, randomMove.row, randomMove.col);
+        
+        // Supprimer un pont aléatoire
+        const bridges = getAvailableBridges();
+        if (bridges.length > 0) {
+            const randomBridge = bridges[Math.floor(Math.random() * bridges.length)];
+            if (randomBridge.type === 'horizontal') {
+                gameState.bridges.horizontal[randomBridge.row][randomBridge.col] = false;
+            } else {
+                gameState.bridges.vertical[randomBridge.row][randomBridge.col] = false;
+            }
+        }
+        
+        // Vérifier si un joueur est éliminé
+        checkPlayerElimination();
         
         // Mettre à jour l'interface
         renderBoard();
         updateGameInfo();
         
-        // Attendre 2 secondes pour que l'utilisateur voie le déplacement
+        // Passer au joueur suivant
+        nextTurn();
+    }
+}
+
+// Fonction pour obtenir tous les ponts disponibles
+function getAvailableBridges() {
+    const bridges = [];
+    
+    // Vérifier les ponts horizontaux
+    for (let row = 0; row < BOARD_SIZE - 1; row++) {
+        for (let col = 0; col < BOARD_SIZE; col++) {
+            if (gameState.bridges.horizontal[row][col]) {
+                bridges.push({ type: 'horizontal', row, col });
+            }
+        }
+    }
+    
+    // Vérifier les ponts verticaux
+    for (let row = 0; row < BOARD_SIZE; row++) {
+        for (let col = 0; col < BOARD_SIZE - 1; col++) {
+            if (gameState.bridges.vertical[row][col]) {
+                bridges.push({ type: 'vertical', row, col });
+            }
+        }
+    }
+    
+    return bridges;
+}
+
+// Fonction pour obtenir les mouvements valides pour un lutin
+function getValidMoves(row, col) {
+    const moves = [];
+    
+    // Vérifier les cases adjacentes
+    const directions = [
+        { dr: -1, dc: 0 }, // haut
+        { dr: 1, dc: 0 },  // bas
+        { dr: 0, dc: -1 }, // gauche
+        { dr: 0, dc: 1 }   // droite
+    ];
+    
+    for (const dir of directions) {
+        const newRow = row + dir.dr;
+        const newCol = col + dir.dc;
+        
+        if (isValidMove(row, col, newRow, newCol)) {
+            moves.push({ row: newRow, col: newCol });
+        }
+    }
+    
+    return moves;
+}
+
+// Fonction pour exécuter un mouvement de l'IA
+function executeAIMove(selectedLutin, targetCell, bridgeToRemove) {
+    // D'abord, montrer le lutin sélectionné
+    gameState.selectedLutin = selectedLutin;
+    gameState.gamePhase = 'move';
+    renderBoard();
+    updateGameInfo();
+    
+    // Message indiquant le mouvement de l'IA
+    if (gameMessage) {
+        gameMessage.textContent = `L'IA déplace un lutin de [${selectedLutin.row},${selectedLutin.col}] vers [${targetCell.row},${targetCell.col}]`;
+        gameMessage.style.color = getPlayerColor(PLAYERS[gameState.currentPlayer]);
+        gameMessage.style.fontWeight = 'bold';
+    }
+    
+    // Attendre 1.5 secondes pour montrer la sélection
+    setTimeout(() => {
+        // Déplacer le lutin avec animation visuelle
+        const selectedLutinElement = document.querySelector(`.lutin[data-row="${selectedLutin.row}"][data-col="${selectedLutin.col}"]`);
+        const targetCellElement = document.querySelector(`.cell[data-row="${targetCell.row}"][data-col="${targetCell.col}"]`);
+        
+        if (selectedLutinElement && targetCellElement) {
+            // Ajouter une classe d'animation pour le mouvement
+            selectedLutinElement.style.transition = 'all 0.8s ease-in-out';
+            selectedLutinElement.style.transform = 'scale(1.2)';
+            selectedLutinElement.style.zIndex = '10';
+            selectedLutinElement.style.boxShadow = '0 0 20px rgba(255, 255, 0, 0.8)';
+        }
+        
+        // Attendre l'animation puis déplacer
         setTimeout(() => {
-            try {
-                // Trouver l'élément du pont à retirer pour l'animation
-                let bridgeElement;
-                
-                // Coordonnées pour le DOM qui peuvent être différentes des coordonnées logiques
-                let domRow = bridgeToRemove.row;
-                let domCol = bridgeToRemove.col;
-                let bridgeClass = '';
-                
-                if (bridgeToRemove.type === 'horizontal') {
-                    // Pour les ponts horizontaux, essayer plusieurs sélecteurs
-                    const selectors = [
-                        // Sélecteur standard
-                        `.bridge-horizontal[data-row="${domRow}"][data-col="${domCol}"]`,
-                        // Sélecteur pour pont "top"
-                        `.bridge-horizontal.top[data-row="${domRow + 1}"][data-col="${domCol}"]`,
-                        // Sélecteur pour pont "bottom"
-                        `.bridge-horizontal.bottom[data-row="${domRow}"][data-col="${domCol}"]`
-                    ];
+            // Déplacer le lutin
+            moveLutin(selectedLutin.row, selectedLutin.col, targetCell.row, targetCell.col);
+            
+            // Passer à la phase de suppression de pont
+            gameState.gamePhase = 'remove';
+            
+            // Mettre à jour l'interface
+            renderBoard();
+            
+            // Message pour la suppression du pont
+            if (gameMessage) {
+                gameMessage.textContent = `L'IA supprime un pont ${bridgeToRemove.type} à [${bridgeToRemove.row},${bridgeToRemove.col}]`;
+            }
+            
+            // Attendre 2 secondes pour que l'utilisateur voie le déplacement
+            setTimeout(() => {
+                try {
+                    // Supprimer le pont avec animation
+                    let bridgeElement = null;
                     
-                    // Essayer chaque sélecteur jusqu'à trouver un élément
-                    for (const selector of selectors) {
-                        const element = document.querySelector(selector);
-                        if (element) {
-                            bridgeElement = element;
-                            bridgeClass = selector.includes('top') ? 'top' : 
-                                         selector.includes('bottom') ? 'bottom' : '';
-                            break;
-                        }
+                    // Trouver l'élément du pont à supprimer
+                    if (bridgeToRemove.type === 'horizontal') {
+                        bridgeElement = document.querySelector(`.bridge-horizontal[data-row="${bridgeToRemove.row}"][data-col="${bridgeToRemove.col}"]`) ||
+                                      document.querySelector(`.bridge-horizontal.bottom[data-row="${bridgeToRemove.row}"][data-col="${bridgeToRemove.col}"]`) ||
+                                      document.querySelector(`.bridge-horizontal.top[data-row="${bridgeToRemove.row + 1}"][data-col="${bridgeToRemove.col}"]`);
+                    } else {
+                        bridgeElement = document.querySelector(`.bridge-vertical[data-row="${bridgeToRemove.row}"][data-col="${bridgeToRemove.col}"]`) ||
+                                      document.querySelector(`.bridge-vertical.right[data-row="${bridgeToRemove.row}"][data-col="${bridgeToRemove.col}"]`) ||
+                                      document.querySelector(`.bridge-vertical.left[data-row="${bridgeToRemove.row}"][data-col="${bridgeToRemove.col + 1}"]`);
                     }
-                } else {
-                    // Pour les ponts verticaux, essayer plusieurs sélecteurs
-                    const selectors = [
-                        // Sélecteur standard
-                        `.bridge-vertical[data-row="${domRow}"][data-col="${domCol}"]`,
-                        // Sélecteur pour pont "left"
-                        `.bridge-vertical.left[data-row="${domRow}"][data-col="${domCol + 1}"]`,
-                        // Sélecteur pour pont "right"
-                        `.bridge-vertical.right[data-row="${domRow}"][data-col="${domCol}"]`
-                    ];
                     
-                    // Essayer chaque sélecteur jusqu'à trouver un élément
-                    for (const selector of selectors) {
-                        const element = document.querySelector(selector);
-                        if (element) {
-                            bridgeElement = element;
-                            bridgeClass = selector.includes('left') ? 'left' : 
-                                         selector.includes('right') ? 'right' : '';
-                            break;
-                        }
+                    // Animation de suppression du pont
+                    if (bridgeElement) {
+                        bridgeElement.style.transition = 'all 0.5s ease-out';
+                        bridgeElement.style.backgroundColor = '#e74c3c';
+                        bridgeElement.style.transform = 'scale(1.5)';
+                        bridgeElement.style.opacity = '0.8';
+                        
+                        setTimeout(() => {
+                            bridgeElement.style.opacity = '0';
+                            bridgeElement.style.transform = 'scale(0)';
+                        }, 300);
                     }
-                }
-                
-                // Créer un message visuel pour indiquer quel pont va être supprimé
-                const messageElement = document.createElement('div');
-                messageElement.className = 'bridge-removal-message';
-                messageElement.textContent = 'Pont supprimé';
-                messageElement.style.position = 'absolute';
-                messageElement.style.color = 'white';
-                messageElement.style.backgroundColor = 'rgba(231, 76, 60, 0.8)';
-                messageElement.style.padding = '5px 10px';
-                messageElement.style.borderRadius = '5px';
-                messageElement.style.zIndex = '30';
-                messageElement.style.fontSize = '12px';
-                messageElement.style.fontWeight = 'bold';
-                messageElement.style.pointerEvents = 'none';
-                
-                // Appliquer l'animation au pont avant de le supprimer
-                if (bridgeElement) {
-                    // Positionner le message près du pont
-                    const bridgeRect = bridgeElement.getBoundingClientRect();
-                    const boardRect = document.getElementById('game-board').getBoundingClientRect();
                     
-                    // Calculer la position relative au plateau de jeu
-                    messageElement.style.left = `${bridgeRect.left - boardRect.left + bridgeRect.width/2 - 50}px`;
-                    messageElement.style.top = `${bridgeRect.top - boardRect.top - 30}px`;
+                    // Supprimer le pont de l'état du jeu
+                    if (bridgeToRemove.type === 'horizontal') {
+                        gameState.bridges.horizontal[bridgeToRemove.row][bridgeToRemove.col] = false;
+                        console.log(`Pont horizontal supprimé à [${bridgeToRemove.row}, ${bridgeToRemove.col}]`);
+                    } else {
+                        gameState.bridges.vertical[bridgeToRemove.row][bridgeToRemove.col] = false;
+                        console.log(`Pont vertical supprimé à [${bridgeToRemove.row}, ${bridgeToRemove.col}]`);
+                    }
                     
-                    // Ajouter le message au plateau
-                    document.getElementById('game-board').appendChild(messageElement);
-                    
-                    // Ajouter la classe pour l'animation
-                    bridgeElement.classList.add('highlight-bridge');
-                    
-                    // Ajouter une bordure rouge visible pour mieux voir le pont qui va être supprimé
-                    bridgeElement.style.border = '2px solid red';
-                    
-                    // Attendre que l'animation se termine avant de supprimer réellement le pont
+                    // Mettre à jour l'interface pour refléter la suppression du pont
                     setTimeout(() => {
-                        // Supprimer le message
-                        messageElement.remove();
-                        
-                        // Obtenir les coordonnées du pont à partir de l'élément DOM
-                        const bridgeRowAttr = bridgeElement.getAttribute('data-row');
-                        const bridgeColAttr = bridgeElement.getAttribute('data-col');
-                        const bridgeRow = parseInt(bridgeRowAttr);
-                        const bridgeCol = parseInt(bridgeColAttr);
-                        
-                        // Déterminer le type de pont à partir de la classe
-                        const isBridgeHorizontal = bridgeElement.classList.contains('bridge-horizontal');
-                        const bridgeType = isBridgeHorizontal ? 'horizontal' : 'vertical';
-                        
-                        // Supprimer le pont à l'endroit indiqué visuellement
-                        if (bridgeType === 'horizontal') {
-                            // Ajuster les coordonnées si nécessaire pour les ponts top/bottom
-                            let adjustedRow = bridgeRow;
-                            if (bridgeElement.classList.contains('top')) {
-                                adjustedRow = bridgeRow - 1;
-                            }
-                            
-                            gameState.bridges.horizontal[adjustedRow][bridgeCol] = false;
-                            console.log(`Pont horizontal supprimé à [${adjustedRow}, ${bridgeCol}]`);
-                        } else {
-                            // Ajuster les coordonnées si nécessaire pour les ponts left/right
-                            let adjustedCol = bridgeCol;
-                            if (bridgeElement.classList.contains('left')) {
-                                adjustedCol = bridgeCol - 1;
-                            }
-                            
-                            gameState.bridges.vertical[bridgeRow][adjustedCol] = false;
-                            console.log(`Pont vertical supprimé à [${bridgeRow}, ${adjustedCol}]`);
-                        }
-                        
-                        // Mettre à jour l'interface pour refléter la suppression du pont
                         renderBoard();
                         
                         // Vérifier si un joueur est éliminé
@@ -846,33 +915,20 @@ function executeAIMove(selectedLutin, targetCell, bridgeToRemove) {
                         
                         // Passer au joueur suivant après 1 seconde
                         setTimeout(() => {
-                            passerAuJoueurSuivant();
+                            if (gameMessage) {
+                                gameMessage.style.fontWeight = 'normal';
+                                gameMessage.style.color = '';
+                            }
+                            nextTurn();
                         }, 1000);
-                    }, 1500);
-                } else {
-                    // Si on ne trouve pas le pont dans le DOM, le supprimer directement
-                    if (bridgeToRemove.type === 'horizontal') {
-                        gameState.bridges.horizontal[bridgeToRemove.row][bridgeToRemove.col] = false;
-                    } else {
-                        gameState.bridges.vertical[bridgeToRemove.row][bridgeToRemove.col] = false;
-                    }
+                    }, 800);
                     
-                    // Vérifier si un joueur est éliminé
-                    checkPlayerElimination();
-                    
-                    // Mettre à jour l'interface
-                    renderBoard();
-                    
-                    // Passer au joueur suivant
-                    setTimeout(() => {
-                        passerAuJoueurSuivant();
-                    }, 1000);
+                } catch (error) {
+                    console.error("Erreur lors de la suppression du pont:", error);
+                    nextTurn();
                 }
-            } catch (error) {
-                console.error("Erreur lors de la suppression du pont:", error);
-                passerAuJoueurSuivant();
-            }
-        }, 2000);
+            }, 2000);
+        }, 800);
     }, 1500);
 }
 
@@ -888,7 +944,7 @@ function useBasicAI() {
     if (movableLutins.length === 0) {
         console.log(`L'IA ${currentPlayer} n'a pas de mouvements possibles, passe son tour`);
         checkPlayerElimination();
-        passerAuJoueurSuivant();
+        nextTurn();
         return;
     }
     
@@ -917,25 +973,7 @@ function useBasicAI() {
     const targetCell = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
     
     // Trouver tous les ponts disponibles
-    const availableBridges = [];
-    
-    // Ponts horizontaux
-    for (let row = 0; row < BOARD_SIZE; row++) {
-        for (let col = 0; col < BOARD_SIZE; col++) {
-            if (gameState.bridges.horizontal[row][col]) {
-                availableBridges.push({ type: 'horizontal', row, col });
-            }
-        }
-    }
-    
-    // Ponts verticaux
-    for (let row = 0; row < BOARD_SIZE; row++) {
-        for (let col = 0; col < BOARD_SIZE; col++) {
-            if (gameState.bridges.vertical[row][col]) {
-                availableBridges.push({ type: 'vertical', row, col });
-            }
-        }
-    }
+    const availableBridges = getAvailableBridges();
     
     // Sélectionner un pont aléatoire
     const bridgeToRemove = availableBridges[Math.floor(Math.random() * availableBridges.length)];
@@ -944,50 +982,27 @@ function useBasicAI() {
     executeAIMove(selectedLutin, targetCell, bridgeToRemove);
 }
 
-// Fonction pour passer au joueur suivant
-function passerAuJoueurSuivant() {
-    // Réinitialiser la phase du jeu
-    gameState.gamePhase = 'select';
-    gameState.selectedLutin = null;
-    
-    // Passer au joueur suivant avec modulo
-    gameState.currentPlayer = (gameState.currentPlayer + 1) % PLAYERS.length;
-    
-    // Si le joueur suivant n'est pas actif, passer au suivant
-    while (!gameState.activePlayers.includes(PLAYERS[gameState.currentPlayer])) {
-        gameState.currentPlayer = (gameState.currentPlayer + 1) % PLAYERS.length;
-    }
-    
-    // Mettre à jour l'interface
-    renderBoard();
-    updateGameInfo();
-    
-    // Vérifier si le joueur suivant est humain ou IA
-    const nextPlayer = PLAYERS[gameState.currentPlayer];
-    console.log(`Passage au joueur suivant: ${nextPlayer}`);
-    
-    if (AI_PLAYERS.includes(nextPlayer) && !gameState.gameOver) {
-        setTimeout(playAITurn, 3000);
-    } else {
-        enableHumanPlayerLutins();
-    }
+// Event listeners
+if (resetButton) {
+    resetButton.addEventListener('click', () => {
+        initGame();
+    });
 }
 
-// Event listeners
-resetButton.addEventListener('click', () => {
-    initGame();
-});
+if (helpButton && helpModal) {
+    helpButton.addEventListener('click', () => {
+        helpModal.style.display = 'block';
+    });
+}
 
-helpButton.addEventListener('click', () => {
-    helpModal.style.display = 'block';
-});
-
-closeModalButton.addEventListener('click', () => {
-    helpModal.style.display = 'none';
-});
+if (closeModalButton && helpModal) {
+    closeModalButton.addEventListener('click', () => {
+        helpModal.style.display = 'none';
+    });
+}
 
 window.addEventListener('click', (event) => {
-    if (event.target === helpModal) {
+    if (helpModal && event.target === helpModal) {
         helpModal.style.display = 'none';
     }
 });
@@ -1048,32 +1063,150 @@ function showVictoryMessage(winner) {
         
         console.log(`Victoire du joueur ${winner}`);
         
-        // Créer l'overlay de victoire
+        // Créer l'overlay de victoire avec centrage parfait
         const victoryOverlay = document.createElement('div');
         victoryOverlay.classList.add('victory-message');
+        victoryOverlay.style.position = 'fixed';
+        victoryOverlay.style.top = '0';
+        victoryOverlay.style.left = '0';
+        victoryOverlay.style.width = '100vw';
+        victoryOverlay.style.height = '100vh';
+        victoryOverlay.style.backgroundColor = 'rgba(0, 0, 0, 0.85)';
+        victoryOverlay.style.display = 'flex';
+        victoryOverlay.style.justifyContent = 'center';
+        victoryOverlay.style.alignItems = 'center';
+        victoryOverlay.style.zIndex = '9999';
+        victoryOverlay.style.margin = '0';
+        victoryOverlay.style.padding = '0';
         
-        // Créer le contenu
+        // Créer le contenu avec animation d'apparition
         const victoryContent = document.createElement('div');
         victoryContent.classList.add('victory-content');
+        victoryContent.style.backgroundColor = 'white';
+        victoryContent.style.padding = '40px 50px';
+        victoryContent.style.borderRadius = '15px';
+        victoryContent.style.textAlign = 'center';
+        victoryContent.style.boxShadow = '0 10px 30px rgba(0, 0, 0, 0.3)';
+        victoryContent.style.maxWidth = '90vw';
+        victoryContent.style.maxHeight = '90vh';
+        victoryContent.style.transform = 'scale(0.8)';
+        victoryContent.style.transition = 'transform 0.3s ease-out';
+        victoryContent.style.border = `4px solid ${getPlayerColor(winner)}`;
         
-        // Créer le titre
+        // Animation d'entrée
+        setTimeout(() => {
+            victoryContent.style.transform = 'scale(1)';
+        }, 10);
+        
+        // Créer le titre avec animation
         const victoryTitle = document.createElement('h2');
-        victoryTitle.textContent = '🎉 Victoire ! 🎉';
+        victoryTitle.textContent = '🎉 VICTOIRE ! 🎉';
+        victoryTitle.style.margin = '0 0 25px 0';
+        victoryTitle.style.fontSize = '2.5em';
+        victoryTitle.style.color = getPlayerColor(winner);
+        victoryTitle.style.textShadow = '2px 2px 4px rgba(0, 0, 0, 0.2)';
+        victoryTitle.style.fontFamily = 'Arial, sans-serif';
+        victoryTitle.style.fontWeight = 'bold';
         
-        // Créer le message
+        // Créer le message du gagnant
         const victoryMessage = document.createElement('p');
-        victoryMessage.textContent = `Le joueur ${winner.toUpperCase()} a gagné la partie !`;
+        victoryMessage.textContent = `Le joueur ${winner.charAt(0).toUpperCase() + winner.slice(1)} a gagné la partie !`;
         victoryMessage.style.color = getPlayerColor(winner);
+        victoryMessage.style.fontSize = '1.8em';
+        victoryMessage.style.fontWeight = 'bold';
+        victoryMessage.style.margin = '0 0 30px 0';
+        victoryMessage.style.fontFamily = 'Arial, sans-serif';
         
-        // Créer le bouton pour rejouer
+        // Créer le bouton pour rejouer avec effet hover
         const replayButton = document.createElement('button');
-        replayButton.textContent = 'Nouvelle Partie';
-        replayButton.addEventListener('click', () => {
-            document.body.removeChild(victoryOverlay);
-            initGame();
+        replayButton.textContent = '🎮 Nouvelle Partie';
+        replayButton.style.padding = '15px 30px';
+        replayButton.style.fontSize = '1.3em';
+        replayButton.style.backgroundColor = getPlayerColor(winner);
+        replayButton.style.color = 'white';
+        replayButton.style.border = 'none';
+        replayButton.style.borderRadius = '8px';
+        replayButton.style.cursor = 'pointer';
+        replayButton.style.fontWeight = 'bold';
+        replayButton.style.fontFamily = 'Arial, sans-serif';
+        replayButton.style.transition = 'all 0.3s ease';
+        replayButton.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.2)';
+        
+        // Effets hover pour le bouton
+        replayButton.addEventListener('mouseenter', () => {
+            replayButton.style.transform = 'translateY(-2px)';
+            replayButton.style.boxShadow = '0 6px 12px rgba(0, 0, 0, 0.3)';
         });
         
+        replayButton.addEventListener('mouseleave', () => {
+            replayButton.style.transform = 'translateY(0)';
+            replayButton.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.2)';
+        });
+        
+        replayButton.addEventListener('click', () => {
+            // Animation de sortie
+            victoryContent.style.transform = 'scale(0.8)';
+            victoryOverlay.style.opacity = '0';
+            
+            setTimeout(() => {
+                if (document.body.contains(victoryOverlay)) {
+                    document.body.removeChild(victoryOverlay);
+                }
+                initGame();
+            }, 200);
+        });
+        
+        // Créer un bouton de fermeture (X)
+        const closeButton = document.createElement('button');
+        closeButton.textContent = '✕';
+        closeButton.style.position = 'absolute';
+        closeButton.style.top = '10px';
+        closeButton.style.right = '15px';
+        closeButton.style.background = 'none';
+        closeButton.style.border = 'none';
+        closeButton.style.fontSize = '1.5em';
+        closeButton.style.color = '#666';
+        closeButton.style.cursor = 'pointer';
+        closeButton.style.width = '30px';
+        closeButton.style.height = '30px';
+        closeButton.style.borderRadius = '50%';
+        closeButton.style.transition = 'all 0.2s ease';
+        
+        closeButton.addEventListener('mouseenter', () => {
+            closeButton.style.backgroundColor = '#f0f0f0';
+            closeButton.style.color = '#000';
+        });
+        
+        closeButton.addEventListener('mouseleave', () => {
+            closeButton.style.backgroundColor = 'transparent';
+            closeButton.style.color = '#666';
+        });
+        
+        closeButton.addEventListener('click', () => {
+            // Animation de sortie
+            victoryContent.style.transform = 'scale(0.8)';
+            victoryOverlay.style.opacity = '0';
+            
+            setTimeout(() => {
+                if (document.body.contains(victoryOverlay)) {
+                    document.body.removeChild(victoryOverlay);
+                }
+                initGame();
+            }, 200);
+        });
+        
+        // Permettre de fermer avec la touche Escape
+        const escapeHandler = (event) => {
+            if (event.key === 'Escape') {
+                closeButton.click();
+                document.removeEventListener('keydown', escapeHandler);
+            }
+        };
+        document.addEventListener('keydown', escapeHandler);
+        
         // Assembler le contenu
+        victoryContent.style.position = 'relative';
+        victoryContent.appendChild(closeButton);
         victoryContent.appendChild(victoryTitle);
         victoryContent.appendChild(victoryMessage);
         victoryContent.appendChild(replayButton);
@@ -1081,6 +1214,12 @@ function showVictoryMessage(winner) {
         
         // Ajouter l'overlay au body
         document.body.appendChild(victoryOverlay);
+        
+        // Focus sur le bouton pour permettre l'interaction clavier
+        setTimeout(() => {
+            replayButton.focus();
+        }, 100);
+        
     } catch (error) {
         console.error('Erreur lors de l\'affichage du message de victoire:', error);
     }
