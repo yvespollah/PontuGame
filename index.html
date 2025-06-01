@@ -87,7 +87,27 @@
     
     <!-- Interface Prolog et scripts du jeu -->
     <script src="prolog_interface.js"></script>
-    <script src="game.js"></script>
-    <script src="bot.js"></script>
+    <script src="game.js" defer></script>
+    <script>
+        // Vérifier que le jeu est correctement initialisé
+        window.addEventListener('load', function() {
+            if (typeof gameState === 'undefined' || !gameState.board) {
+                console.error('Erreur: Le jeu n\'est pas correctement initialisé');
+                document.getElementById('game-message').textContent = 
+                    'Erreur de chargement. Veuillez rafraîchir la page.';
+            } else {
+                console.log('Jeu initialisé avec succès');
+            }
+        });
+        
+        // Gérer les erreurs globales
+        window.onerror = function(msg, url, line) {
+            console.error(`Erreur: ${msg}\nFichier: ${url}\nLigne: ${line}`);
+            document.getElementById('game-message').textContent = 
+                'Une erreur est survenue. Veuillez rafraîchir la page.';
+            return false;
+        };
+    </script>
+    <script src="bot.js" defer></script>
 </body>
 </html>

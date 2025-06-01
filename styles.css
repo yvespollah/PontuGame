@@ -116,65 +116,88 @@ footer {
 }
 
 /* Bridge Styles - Enhanced Design */
-.bridge-horizontal, .bridge-vertical {
+.bridge {
     position: absolute;
+    background-color: #e67e22;
     cursor: pointer;
-    z-index: 10;
     transition: all 0.3s ease;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-    background: linear-gradient(to bottom, #f5d76e, #f4d03f);
-    border: 1px solid #e67e22;
+    z-index: 1;
+    border-radius: 3px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .bridge-horizontal {
-    height: 18%;
-    width: 110%;
-    left: -5%;
-    border-radius: 6px;
-    background: linear-gradient(to right, #f5d76e, #f4d03f, #f5d76e);
-    transform-style: preserve-3d;
-    transform: perspective(500px) rotateX(5deg);
+    width: calc(100% + 30px);
+    height: 8px;
+    left: -15px;
 }
 
 .bridge-vertical {
-    width: 18%;
-    height: 110%;
-    top: -5%;
-    border-radius: 6px;
-    background: linear-gradient(to bottom, #f5d76e, #f4d03f, #f5d76e);
-    transform-style: preserve-3d;
-    transform: perspective(500px) rotateY(5deg);
+    height: calc(100% + 30px);
+    width: 8px;
+    top: -15px;
 }
 
 .bridge-horizontal.top {
-    top: -9%;
-    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
+    top: -11px;
 }
 
 .bridge-horizontal.bottom {
-    bottom: -9%;
-    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
+    bottom: -11px;
 }
 
 .bridge-vertical.left {
-    left: -9%;
-    box-shadow: 3px 0 6px rgba(0, 0, 0, 0.16), 3px 0 6px rgba(0, 0, 0, 0.23);
+    left: -11px;
 }
 
 .bridge-vertical.right {
-    right: -9%;
-    box-shadow: -3px 0 6px rgba(0, 0, 0, 0.16), -3px 0 6px rgba(0, 0, 0, 0.23);
+    right: -11px;
 }
 
-.bridge-horizontal:hover, .bridge-vertical:hover {
-    background: linear-gradient(to bottom, #e74c3c, #c0392b);
-    transform: scale(1.05) perspective(500px) rotateX(8deg);
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-    border-color: #c0392b;
+.bridge:hover {
+    background-color: #d35400;
+    transform: scale(1.1);
+    box-shadow: 0 0 15px rgba(230, 126, 34, 0.6);
 }
 
-.bridge-vertical:hover {
-    transform: scale(1.05) perspective(500px) rotateY(8deg);
+.bridge.selectable {
+    background-color: #e74c3c;
+    animation: bridgePulse 1.5s infinite;
+}
+
+@keyframes bridgePulse {
+    0% { transform: scale(1); box-shadow: 0 0 5px rgba(231, 76, 60, 0.6); }
+    50% { transform: scale(1.1); box-shadow: 0 0 15px rgba(231, 76, 60, 0.8); }
+    100% { transform: scale(1); box-shadow: 0 0 5px rgba(231, 76, 60, 0.6); }
+}
+
+.bridge:hover {
+    background-color: #e67e22;
+    transform: scale(1.1);
+    box-shadow: 0 0 10px rgba(230, 126, 34, 0.5);
+}
+
+.bridge.removing {
+    animation: bridgeRemove 0.5s forwards;
+    background-color: #c0392b;
+}
+
+@keyframes bridgeRemove {
+    0% { 
+        opacity: 1; 
+        transform: scale(1); 
+        box-shadow: 0 0 0 rgba(192, 57, 43, 0);
+    }
+    50% { 
+        opacity: 0.8; 
+        transform: scale(1.2); 
+        box-shadow: 0 0 20px rgba(192, 57, 43, 0.8);
+    }
+    100% { 
+        opacity: 0; 
+        transform: scale(0.5); 
+        box-shadow: 0 0 30px rgba(192, 57, 43, 0);
+    }
 }
 
 /* Add wood texture effect */
@@ -408,24 +431,29 @@ footer {
 }
 
 /* Victory Screen Styles */
-.victory-overlay {
+.victory-message {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0);
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(44, 62, 80, 0.95);
+    padding: 2rem;
+    border-radius: 10px;
+    text-align: center;
+    color: white;
     z-index: 1000;
-    opacity: 0;
-    transition: background-color 0.3s ease, opacity 0.3s ease;
+    animation: messageAppear 0.5s ease-out;
 }
 
-.victory-overlay.show {
-    background-color: rgba(0, 0, 0, 0.8);
-    opacity: 1;
+@keyframes messageAppear {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -70%);
+    }
+    to {
+        opacity: 1;
+        transform: translate(-50%, -50%);
+    }
 }
 
 .victory-content {
@@ -437,41 +465,6 @@ footer {
     width: 80%;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
     animation: scaleIn 0.5s ease-in-out;
-}
-
-.lutin.eliminated {
-    animation: eliminatedAnimation 1s forwards;
-    opacity: 0.5;
-    filter: grayscale(100%);
-}
-
-.lutin.winner {
-    animation: winnerAnimation 2s infinite;
-    filter: brightness(1.2);
-    box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
-}
-
-.victory-animation {
-    animation: bounceIn 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-}
-
-@keyframes eliminatedAnimation {
-    0% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(1.2); opacity: 0.7; }
-    100% { transform: scale(0.8); opacity: 0.5; }
-}
-
-@keyframes winnerAnimation {
-    0% { transform: scale(1); box-shadow: 0 0 20px rgba(255, 215, 0, 0.6); }
-    50% { transform: scale(1.1); box-shadow: 0 0 30px rgba(255, 215, 0, 0.8); }
-    100% { transform: scale(1); box-shadow: 0 0 20px rgba(255, 215, 0, 0.6); }
-}
-
-@keyframes bounceIn {
-    0% { transform: scale(0.3); opacity: 0; }
-    50% { transform: scale(1.1); }
-    70% { transform: scale(0.9); }
-    100% { transform: scale(1); opacity: 1; }
 }
 
 .victory-content h2 {
