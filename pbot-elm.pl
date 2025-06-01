@@ -30,8 +30,8 @@ produire_reponse(L,Rep) :-
     call(Body), !.
 
 produire_reponse(_,[S1,S2]) :-
-    S1 = "Désolé, je ne comprends pas bien votre question. ",
-    S2 = "N'hésitez pas à me demander des informations sur les règles, les déplacements ou les stratégies du jeu! 🎮".
+    S1 = "Je ne sais pas. ",
+    S2 = "Les étudiants vont m'aider, vous le verrez".
 
 match_pattern(Pattern,Lmots) :-
     sublist(Pattern,Lmots).
@@ -94,7 +94,7 @@ mclef(couleur,6).
 
 regle_rep(commence,1,
  [ qui, commence, le, jeu ],
- [ "Par convention, c'est au joueur en charge des lutins verts de commencer la partie. C'est vous qui jouez en premier! 👍" ] ).
+ [ "par convention, c'est au joueur en charge des lutins verts de commencer la partie." ] ).
 
 % ----------------------------------------------------------------% 
 
@@ -118,7 +118,7 @@ write_to_chars(4,"4 ").
 
 regle_rep(deplacer,1,
  [ [ comment ], 3, [ deplacer ], 3, [ lutin ] ],
- [ "Pour déplacer un lutin, cliquez simplement dessus puis sur la case de destination accessible par un pont.", "Astuce: deux lutins ne peuvent jamais partager la même case, alors planifiez bien vos déplacements! 💭" ] ).
+ [ "pour deplacer un lutin, vous devez le faire passer d'une case a une autre en empruntant un pont.", "deux lutins ne peuvent pas se trouver sur la meme case." ] ).
 
 regle_rep(deplac,1,
  [ [ puis ], 3, [ deplacer ], 3, [ lutin ], 3, [ occupe ] ],
@@ -126,7 +126,7 @@ regle_rep(deplac,1,
 
 regle_rep(retirer,1,
  [ [ quel ], 3, [ pont ], 3, [ retirer ] ],
- [ "Vous pouvez retirer n'importe quel pont sur le plateau - celui que vous venez d'emprunter ou un autre.", "Stratégie: pensez à isoler les lutins adverses tout en préservant vos propres chemins! 🧠" ] ).
+ [ "il est permis de retirer le pont emprunte ou tout autre pont.", "vous pouvez aussi choisir de tourner un pont d'un quart de tour au lieu de le retirer." ] ).
 
 regle_rep(pont,1,
  [ [ comment ], 3, [ retirer ], 3, [ pont ] ],
@@ -134,11 +134,11 @@ regle_rep(pont,1,
 
 regle_rep(regle,1,
  [ [ quelles ], 3, [ regles ], 3, [ jeu ] ],
- [ "PontuXL est un jeu stratégique où vous déplacez vos lutins et retirez des ponts pour isoler vos adversaires.", "Votre tour se déroule en 2 étapes: 1) Déplacer un lutin via un pont, 2) Retirer ou tourner un pont.", "Un joueur est éliminé quand tous ses lutins sont isolés sans aucun pont accessible.", "Objectif: être le dernier joueur avec des lutins non isolés! 🏆" ] ).
+ [ "pontu est un jeu ou vous deplacez vos lutins et retirez des ponts pour isoler les lutins adverses.", "a votre tour, vous deplacez un lutin en empruntant un pont, puis vous retirez ou tournez un pont.", "un joueur est elimine quand tous ses lutins sont isoles sans pont autour d'eux.", "le dernier joueur non elimine gagne la partie." ] ).
 
 regle_rep(gagner,1,
  [ [ comment ], 3, [ gagner ] ],
- [ "Pour gagner, vous devez être le dernier joueur avec des lutins non isolés sur le plateau.", "Conseil: Retirez stratégiquement les ponts pour piéger les lutins adverses tout en gardant des chemins de secours pour vos propres lutins! 🔥" ] ).
+ [ "le dernier joueur non elimine gagne la partie.", "pour cela, vous devez isoler les lutins de vos adversaires en retirant strategiquement les ponts." ] ).
 
 regle_rep(plateau,1,
  [ [ taille ], 3, [ plateau ] ],

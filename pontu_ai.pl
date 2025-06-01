@@ -244,11 +244,6 @@ minimax_min([Coup|Reste], Etat, Joueur, Profondeur, Alpha, Beta, MeilleurCoup, M
 profondeur_max(3).
 evaluation_max(100).
 
-% Profondeur de recherche en fonction du niveau de difficulté
-profondeur_difficulte(1, 1).  % Facile - recherche moins profonde
-profondeur_difficulte(2, 3).  % Normal - profondeur standard
-profondeur_difficulte(3, 5).  % Difficile - recherche plus profonde
-
 % Structure pour stocker les évaluations des joueurs
 % evaluation(Vert, Bleu, Jaune, Rouge)
 
@@ -256,30 +251,6 @@ profondeur_difficulte(3, 5).  % Difficile - recherche plus profonde
 trouver_meilleur_coup(Etat, MeilleurCoup) :-
     etat_jeu(_, _, JoueurCourant, JoueursActifs) = Etat,
     profondeur_max(ProfondeurMax),
-    evaluation_max(EvaluationMax),
-    
-    % Générer tous les coups possibles
-    coups_possibles(Etat, JoueurCourant, Coups),
-    
-    % Si aucun coup n'est possible, retourner aucun_coup
-    (Coups = [] -> 
-        MeilleurCoup = aucun_coup
-    ;
-        % Trouver l'index du joueur courant
-        couleurs_joueurs(Couleurs),
-        nth0(IndexJoueur, Couleurs, JoueurCourant),
-        
-        % Initialiser le meilleur score et le meilleur coup
-        MeilleurScore = -1,
-        
-        % Évaluer chaque coup possible
-        evaluer_coups(Coups, Etat, IndexJoueur, ProfondeurMax, EvaluationMax, MeilleurScore, aucun_coup, MeilleurCoup)
-    ).
-
-% Trouver le meilleur coup avec l'algorithme Maxⁿ et niveau de difficulté
-trouver_meilleur_coup_difficulte(Etat, Difficulte, MeilleurCoup) :-
-    etat_jeu(_, _, JoueurCourant, JoueursActifs) = Etat,
-    profondeur_difficulte(Difficulte, ProfondeurMax),
     evaluation_max(EvaluationMax),
     
     % Générer tous les coups possibles
@@ -635,23 +606,14 @@ jouer_ia_maxn(Etat, MeilleurCoup) :-
     % Trouver le meilleur coup avec l'algorithme Maxⁿ
     trouver_meilleur_coup(Etat, MeilleurCoup).
 
-% Jouer avec l'IA Maxⁿ en fonction du niveau de difficulté
-jouer_ia_maxn_difficulte(Etat, Difficulte, MeilleurCoup) :-
-    % Vérifier que le joueur est bien contrôlé par l'IA
-    etat_jeu(_, _, Joueur, _) = Etat,
-    couleurs_ia(CouleursIA),
-    member(Joueur, CouleursIA),
-    
-    % Trouver le meilleur coup avec l'algorithme Maxⁿ et le niveau de difficulté
-    trouver_meilleur_coup_difficulte(Etat, Difficulte, MeilleurCoup).
-
-% Prédicat principal pour obtenir le coup de l'IA avec Maxⁿ et niveau de difficulté
-obtenir_coup_ia_maxn(Plateau, Ponts, Joueur, JoueursActifs, Difficulte, Deplacement, RetirerPont) :-
+% Prédicat principal pour obtenir le coup de l'IA avec Maxⁿ
+obtenir_coup_ia_maxn(Plateau, Ponts, Joueur, Deplacement, RetirerPont) :-
     % Créer l'état du jeu
-    Etat = etat_jeu(Plateau, Ponts, Joueur, JoueursActifs),
+    couleurs_joueurs(Couleurs),
+    Etat = etat_jeu(Plateau, Ponts, Joueur, Couleurs),
     
-    % Obtenir le meilleur coup avec Maxⁿ en fonction de la difficulté
-    jouer_ia_maxn_difficulte(Etat, Difficulte, MeilleurCoup),
+    % Obtenir le meilleur coup avec Maxⁿ
+    jouer_ia_maxn(Etat, MeilleurCoup),
     
     % Extraire le déplacement et le retrait de pont
     coup(Deplacement, RetirerPont) = MeilleurCoup.

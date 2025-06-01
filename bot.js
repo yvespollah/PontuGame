@@ -106,7 +106,7 @@ function initBot() {
     });
 
     // Add initial bot message
-    addMessage("Bienvenue dans PontuXL! Je suis votre assistant virtuel et je serai ravi de vous aider avec les règles du jeu. N'hésitez pas à me poser des questions sur les déplacements, les ponts, ou les stratégies. Bon jeu! 🎮", 'bot');
+    addMessage("Bonjour ! Je suis le chatbot de Pontu. Je peux vous aider avec les règles du jeu, comment jouer, et répondre à vos questions. Que voulez-vous savoir ?", 'bot');
 }
 
 // Handle user message
@@ -140,34 +140,19 @@ async function handleUserMessage() {
 // Add a message to the chat
 function addMessage(message, sender) {
     const { chatMessages } = window.chatElements;
+    
+    if (!chatMessages) {
+        console.error('Chat messages container not found!');
+        return;
+    }
+
     const messageElement = document.createElement('div');
-    messageElement.classList.add('message');
-    messageElement.classList.add(sender === 'user' ? 'user-message' : 'bot-message');
+    messageElement.className = sender === 'user' ? 'user-message' : 'bot-message';
+    messageElement.textContent = message;
     
-    // Add avatar/icon to the message
-    const avatarElement = document.createElement('div');
-    avatarElement.classList.add('message-avatar');
-    avatarElement.innerHTML = sender === 'user' ? '<i class="fas fa-user"></i>' : '<i class="fas fa-robot"></i>';
-    messageElement.appendChild(avatarElement);
-    
-    // Create content container
-    const contentElement = document.createElement('div');
-    contentElement.classList.add('message-content');
-    
-    // Format message with line breaks
-    const formattedMessage = message.replace(/\n/g, '<br>');
-    contentElement.innerHTML = formattedMessage;
-    messageElement.appendChild(contentElement);
-    
-    // Add the message to the chat
     chatMessages.appendChild(messageElement);
     
-    // Add animation class
-    setTimeout(() => {
-        messageElement.classList.add('message-appear');
-    }, 10);
-    
-    // Scroll to the bottom
+    // Scroll to bottom
     chatMessages.scrollTop = chatMessages.scrollHeight;
 }
 
@@ -404,20 +389,14 @@ async function getPrologResponse(message) {
     }
 }
 
-// Initialize the bot when DOM is loaded - only once
-let botInitialized = false;
-
-function initializeBotIfNeeded() {
-    if (!botInitialized) {
-        console.log('Initializing bot...');
-        initBot();
-        botInitialized = true;
-    }
-}
-
-document.addEventListener('DOMContentLoaded', initializeBotIfNeeded);
+// Initialize the bot when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM loaded, initializing bot...');
+    initBot();
+});
 
 // Also handle the case where the script is loaded after DOMContentLoaded
 if (document.readyState === 'complete' || document.readyState === 'interactive') {
-    initializeBotIfNeeded();
+    console.log('DOM already loaded, initializing bot...');
+    initBot();
 }

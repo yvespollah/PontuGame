@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PontuXL - Jeu de société</title>
     <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
     <header>
@@ -22,18 +21,6 @@
                 <div class="game-status">
                     <p id="game-message">Déplacez un lutin puis retirez un pont.</p>
                 </div>
-                <!-- <div class="game-statistics">
-                    <div class="stats-container">
-                        <div class="stat-item">
-                            <span class="stat-label">Tours:</span>
-                            <span id="turn-counter" class="stat-value">0</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-label">Ponts retirés:</span>
-                            <span id="bridges-removed" class="stat-value">0</span>
-                        </div>
-                    </div>
-                </div> -->
             </div>
 
             <div class="game-board" id="game-board">
@@ -43,25 +30,19 @@
             <div class="game-controls">
                 <button id="reset-game">Nouvelle Partie</button>
                 <button id="help-button">Aide</button>
-                <div class="difficulty-selector">
-                    <label for="ai-difficulty">Difficulté IA:</label>
-                    <select id="ai-difficulty">
-                        <option value="1">Facile</option>
-                        <option value="2" selected>Normal</option>
-                        <option value="3">Difficile</option>
-                    </select>
-                </div>
             </div>
         </div>
 
         <div class="chat-container">
-            <h2><i class="fas fa-robot"></i> PBot - Assistant du jeu</h2>
+            <h2>PBot - Assistant du jeu</h2>
             <div class="chat-messages" id="chat-messages">
-                <!-- Messages will be added dynamically by JavaScript -->
+                <div class="bot-message">
+                    Bonjour, je suis PBot, le bot explicateur du jeu PontuXL. En quoi puis-je vous aider ?
+                </div>
             </div>
             <div class="chat-input">
                 <input type="text" id="user-input" placeholder="Posez votre question ici...">
-                <button id="send-button"><i class="fas fa-paper-plane"></i> Envoyer</button>
+                <button id="send-button">Envoyer</button>
             </div>
         </div>
     </main>

@@ -133,7 +133,7 @@ class PrologInterface {
     }
 
     // Créer une requête Prolog pour obtenir le meilleur coup
-    createPrologQuery(prologState, difficultyLevel = 2) {
+    createPrologQuery(prologState) {
         // Construire les termes Prolog pour le plateau
         let boardTerm = '[';
         for (let i = 0; i < prologState.board.length; i++) {
@@ -184,11 +184,9 @@ class PrologInterface {
         }
         activePlayersTerm += ']';
 
-        // Ajuster la profondeur de recherche en fonction du niveau de difficulté
-        const depth = difficultyLevel;
-        
-        // Construire la requête Prolog avec le niveau de difficulté
-        return `obtenir_coup_ia_maxn(${boardTerm}, ${bridgesTerm}, ${prologState.currentPlayer}, ${activePlayersTerm}, ${depth}, Deplacement, RetirerPont)`;
+        // Construire la requête Prolog
+        // Utiliser le prédicat standard qui est plus stable
+        return `obtenir_coup_ia(${boardTerm}, ${bridgesTerm}, ${prologState.currentPlayer}, Deplacement, RetirerPont)`;
     }
 
     // Convertir le résultat Prolog en format JavaScript
@@ -226,7 +224,7 @@ class PrologInterface {
     }
 
     // Trouver le meilleur coup avec l'algorithme Maxⁿ en Prolog
-    async findBestMove(gameState, difficultyLevel = 2) {
+    async findBestMove(gameState) {
         if (!this.initialized) {
             const success = await this.initialize();
             if (!success) return null;
@@ -236,10 +234,8 @@ class PrologInterface {
             // Convertir l'état du jeu en format Prolog
             const prologState = this.convertGameStateToPrologFormat(gameState);
 
-            // Créer la requête Prolog avec le niveau de difficulté
-            const query = this.createPrologQuery(prologState, difficultyLevel);
-            
-            console.log(`Requête Prolog avec niveau de difficulté ${difficultyLevel}`);
+            // Créer la requête Prolog
+            const query = this.createPrologQuery(prologState);
 
             // Exécuter la requête
             const result = await new Promise((resolve, reject) => {
@@ -273,6 +269,6 @@ class PrologInterface {
 const prologInterface = new PrologInterface();
 
 // Fonction globale pour trouver le meilleur coup
-async function findBestMove(gameState, difficultyLevel = 2) {
-    return await prologInterface.findBestMove(gameState, difficultyLevel);
+async function findBestMove(gameState) {
+    return await prologInterface.findBestMove(gameState);
 }
