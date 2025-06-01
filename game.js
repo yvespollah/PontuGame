@@ -42,7 +42,7 @@ const turnCounter = document.getElementById('turn-counter');
 const bridgesRemoved = document.getElementById('bridges-removed');
 const aiDifficultySelector = document.getElementById('ai-difficulty');
 
-// Initialize the game
+// Initialize the game          
 function initGame() {
     // Create the board structure
     createBoard();
@@ -533,13 +533,29 @@ function handleBridgeClick(event) {
         // Vérifier si un joueur est éliminé
         checkPlayerElimination();
         
-        // Passer au joueur suivant
-        nextTurn();
+        // Vérifier si un joueur a gagné
+        const winner = checkWinCondition();
+        if (winner) {
+            // Afficher le message de victoire
+            showVictoryMessage(winner);
+            gameState.gameOver = true;
+        } else {
+            // Passer au joueur suivant
+            nextTurn();
+        }
     }, 2000);
 }
 
 // Move to the next player's turn
 function nextTurn() {
+    // Check for a winner before moving to the next player
+    const winner = checkWinCondition();
+    if (winner) {
+        // We have a winner!
+        showVictoryMessage(winner);
+        return; // Don't continue to the next turn
+    }
+    
     // Move to the next player
     do {
         gameState.currentPlayer = (gameState.currentPlayer + 1) % PLAYERS.length;
@@ -978,4 +994,14 @@ function showVictoryMessage(winner) {
     
     // Ajouter l'overlay au body
     document.body.appendChild(victoryOverlay);
+    
+    // Ajouter une animation d'apparition
+    victoryOverlay.style.opacity = '0';
+    victoryOverlay.style.transition = 'opacity 0.5s ease-in-out';
+    setTimeout(() => {
+        victoryOverlay.style.opacity = '1';
+    }, 10);
+    
+    // Ajouter un effet de confettis ou de célébration
+    console.log(`Joueur ${winner} a gagné la partie!`);
 }
