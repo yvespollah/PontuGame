@@ -1,7 +1,6 @@
 /**
- * PontuXL Game Logic - Corrected Version
- * This file contains the main game logic for the PontuXL game
- * L'IA utilise l'algorithme Maxⁿ avec élagage superficiel implémenté en Prolog
+ * PontuXL Game Logic - Version avec Phase de Placement
+ * Ce fichier contient la logique principale du jeu PontuXL avec phase de placement initial
  */
 
 // Game constants
@@ -15,7 +14,7 @@ const HUMAN_PLAYERS = ['green', 'yellow']; // Players controlled by humans
 let gameState = {
     currentPlayer: 0, // Index in PLAYERS array
     selectedLutin: null,
-    gamePhase: 'select', // 'select', 'move', 'remove'
+    gamePhase: 'placement', // 'placement', 'select', 'move', 'remove'
     gameOver: false,
     activePlayers: [...PLAYERS], // Players still in the game
     board: [], // 2D array representing the board
@@ -23,7 +22,9 @@ let gameState = {
         horizontal: [], // 2D array representing horizontal bridges
         vertical: [] // 2D array representing vertical bridges
     },
-    lutins: {} // Object mapping player color to array of lutin positions
+    lutins: {}, // Object mapping player color to array of lutin positions
+    placementCount: 0, // Nombre de lutins placés au total
+    currentPlayerLutinCount: {} // Nombre de lutins placés par joueur
 };
 
 // DOM elements
@@ -44,8 +45,7 @@ function initGame() {
         // Initialize game state
         resetGameState();
         
-        // Place lutins on the board
-        placeLutins();
+        // Ne pas placer les lutins automatiquement - phase de placement
         
         // Render the initial board state
         renderBoard();
@@ -53,10 +53,8 @@ function initGame() {
         // Update game info
         updateGameInfo();
 
-        // Enable interactions for human players
-        if (HUMAN_PLAYERS.includes(PLAYERS[gameState.currentPlayer])) {
-            enableHumanPlayerLutins();
-        }
+        // Commencer la phase de placement
+        startPlacementPhase();
 
         // Clear any error messages
         if (gameMessage) {
@@ -103,7 +101,6 @@ function createBoard() {
                         hBridge.dataset.type = 'horizontal';
                         hBridge.dataset.position = 'top';
                         
-                        // Ajouter l'événement de clic directement
                         hBridge.addEventListener('click', function(event) {
                             console.log("Clic sur pont horizontal top");
                             handleBridgeClick(event);
@@ -120,7 +117,6 @@ function createBoard() {
                         hBridge.dataset.type = 'horizontal';
                         hBridge.dataset.position = 'bottom';
                         
-                        // Ajouter l'événement de clic directement
                         hBridge.addEventListener('click', function(event) {
                             console.log("Clic sur pont horizontal bottom");
                             handleBridgeClick(event);
@@ -138,7 +134,6 @@ function createBoard() {
                         vBridge.dataset.type = 'vertical';
                         vBridge.dataset.position = 'left';
                         
-                        // Ajouter l'événement de clic directement
                         vBridge.addEventListener('click', function(event) {
                             console.log("Clic sur pont vertical left");
                             handleBridgeClick(event);
@@ -155,7 +150,6 @@ function createBoard() {
                         vBridge.dataset.type = 'vertical';
                         vBridge.dataset.position = 'right';
                         
-                        // Ajouter l'événement de clic directement
                         vBridge.addEventListener('click', function(event) {
                             console.log("Clic sur pont vertical right");
                             handleBridgeClick(event);
@@ -180,63 +174,151 @@ function resetGameState() {
     // Initialize board
     gameState.board = Array(BOARD_SIZE).fill().map(() => Array(BOARD_SIZE).fill(null));
     
-    // Initialize bridges - CORRECTED: proper dimensions for bridges
+    // Initialize bridges
     gameState.bridges.horizontal = Array(BOARD_SIZE - 1).fill().map(() => Array(BOARD_SIZE).fill(true));
     gameState.bridges.vertical = Array(BOARD_SIZE).fill().map(() => Array(BOARD_SIZE - 1).fill(true));
     
     // Reset game variables
     gameState.currentPlayer = 0;
     gameState.selectedLutin = null;
-    gameState.gamePhase = 'select';
+    gameState.gamePhase = 'placement'; // Commencer par la phase de placement
     gameState.gameOver = false;
     gameState.activePlayers = [...PLAYERS];
+    gameState.placementCount = 0;
     gameState.lutins = {};
+    gameState.currentPlayerLutinCount = {};
     
     PLAYERS.forEach(player => {
         gameState.lutins[player] = [];
+        gameState.currentPlayerLutinCount[player] = 0;
     });
 }
 
-// Place lutins on the board
-function placeLutins() {
-    // Green lutins (top-left)
-    gameState.lutins.green = [
-        {row: 0, col: 0},
-        {row: 0, col: 1},
-        {row: 1, col: 0},
-        {row: 1, col: 1}
-    ];
+// Commencer la phase de placement
+function startPlacementPhase() {
+    gameState.gamePhase = 'placement';
+    gameState.currentPlayer = 0; // Commencer par le joueur vert
+    gameState.placementCount = 0;
     
-    // Blue lutins (top-right)
-    gameState.lutins.blue = [
-        {row: 0, col: BOARD_SIZE - 2},
-        {row: 0, col: BOARD_SIZE - 1},
-        {row: 1, col: BOARD_SIZE - 2},
-        {row: 1, col: BOARD_SIZE - 1}
-    ];
+    console.log("Début de la phase de placement");
+    updateGameInfo();
     
-    // Yellow lutins (bottom-left)
-    gameState.lutins.yellow = [
-        {row: BOARD_SIZE - 2, col: 0},
-        {row: BOARD_SIZE - 2, col: 1},
-        {row: BOARD_SIZE - 1, col: 0},
-        {row: BOARD_SIZE - 1, col: 1}
-    ];
+    // Si c'est un joueur IA, placer automatiquement
+    if (AI_PLAYERS.includes(PLAYERS[gameState.currentPlayer])) {
+        setTimeout(placeAILutin, 1000);
+    }
+}
+
+// Placer un lutin pour l'IA pendant la phase de placement
+function placeAILutin() {
+    const currentPlayer = PLAYERS[gameState.currentPlayer];
     
-    // Red lutins (bottom-right)
-    gameState.lutins.red = [
-        {row: BOARD_SIZE - 2, col: BOARD_SIZE - 2},
-        {row: BOARD_SIZE - 2, col: BOARD_SIZE - 1},
-        {row: BOARD_SIZE - 1, col: BOARD_SIZE - 2},
-        {row: BOARD_SIZE - 1, col: BOARD_SIZE - 1}
-    ];
+    // Trouver une case vide aléatoire
+    const emptyCells = [];
+    for (let row = 0; row < BOARD_SIZE; row++) {
+        for (let col = 0; col < BOARD_SIZE; col++) {
+            if (gameState.board[row][col] === null) {
+                emptyCells.push({ row, col });
+            }
+        }
+    }
     
-    // Update board with lutin positions
-    Object.entries(gameState.lutins).forEach(([color, positions]) => {
-        positions.forEach(pos => {
-            gameState.board[pos.row][pos.col] = color;
-        });
-    });
+    if (emptyCells.length > 0) {
+        const randomCell = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+        placeLutin(randomCell.row, randomCell.col, currentPlayer);
+    }
+}
+
+// Placer un lutin sur le plateau
+function placeLutin(row, col, player) {
+    // Vérifier que la case est vide
+    if (gameState.board[row][col] !== null) {
+        console.log("Case déjà occupée");
+        return false;
+    }
+    
+    // Vérifier que le joueur n'a pas déjà placé tous ses lutins
+    if (gameState.currentPlayerLutinCount[player] >= LUTINS_PER_PLAYER) {
+        console.log("Joueur a déjà placé tous ses lutins");
+        return false;
+    }
+    
+    // Placer le lutin
+    gameState.board[row][col] = player;
+    gameState.lutins[player].push({ row, col });
+    gameState.currentPlayerLutinCount[player]++;
+    gameState.placementCount++;
+    
+    console.log(`Lutin ${player} placé en [${row}, ${col}]. Total: ${gameState.placementCount}/16`);
+    
+    // Mettre à jour l'affichage
+    renderBoard();
+    
+    // Vérifier si la phase de placement est terminée
+    if (gameState.placementCount >= 16) {
+        console.log("Phase de placement terminée, début du jeu normal");
+        startNormalGame();
+        return true;
+    }
+    
+    // Passer au joueur suivant
+    nextPlayerPlacement();
+    return true;
+}
+
+// Passer au joueur suivant pendant la phase de placement
+function nextPlayerPlacement() {
+    gameState.currentPlayer = (gameState.currentPlayer + 1) % PLAYERS.length;
+    
+    updateGameInfo();
+    
+    // Si c'est un joueur IA, placer automatiquement
+    if (AI_PLAYERS.includes(PLAYERS[gameState.currentPlayer])) {
+        setTimeout(placeAILutin, 1000);
+    }
+}
+
+// Commencer le jeu normal après la phase de placement
+function startNormalGame() {
+    gameState.gamePhase = 'select';
+    gameState.currentPlayer = 0; // Recommencer par le joueur vert
+    gameState.selectedLutin = null;
+    
+    updateGameInfo();
+    handlePlayerTurn();
+}
+
+// Handle cell click for placing lutins or moving them
+function handleCellClick(event) {
+    if (gameState.gameOver) return;
+    
+    const cell = event.target.closest('.cell');
+    if (!cell) return;
+    
+    const row = parseInt(cell.dataset.row);
+    const col = parseInt(cell.dataset.col);
+    
+    if (gameState.gamePhase === 'placement') {
+        // Phase de placement : placer un lutin
+        const currentPlayer = PLAYERS[gameState.currentPlayer];
+        
+        // Vérifier que c'est un joueur humain
+        if (!HUMAN_PLAYERS.includes(currentPlayer)) {
+            return;
+        }
+        
+        placeLutin(row, col, currentPlayer);
+    } else if (gameState.gamePhase === 'move' && gameState.selectedLutin) {
+        // Phase de déplacement : déplacer un lutin sélectionné
+        const selectedLutin = gameState.selectedLutin;
+        
+        if (isValidMove(selectedLutin.row, selectedLutin.col, row, col)) {
+            moveLutin(selectedLutin.row, selectedLutin.col, row, col);
+            gameState.gamePhase = 'remove';
+            renderBoard();
+            updateGameInfo();
+        }
+    }
 }
 
 // Render the board based on current game state
@@ -255,9 +337,9 @@ function renderBoard() {
                 lutin.dataset.col = pos.col;
                 lutin.dataset.color = color;
                 
-                // Add click event for current player's lutins if they are human
+                // Add click event for current player's lutins if they are human and not in placement phase
                 const currentPlayer = PLAYERS[gameState.currentPlayer];
-                if (color === currentPlayer && HUMAN_PLAYERS.includes(currentPlayer)) {
+                if (color === currentPlayer && HUMAN_PLAYERS.includes(currentPlayer) && gameState.gamePhase !== 'placement') {
                     lutin.addEventListener('click', handleLutinClick);
                     lutin.style.cursor = 'pointer';
                 }
@@ -278,9 +360,43 @@ function renderBoard() {
         }
     }
     
-    // Debug: Afficher des informations sur le joueur actuel
     console.log(`Joueur actuel: ${PLAYERS[gameState.currentPlayer]}, Phase: ${gameState.gamePhase}`);
-    console.log(`Est un joueur humain: ${HUMAN_PLAYERS.includes(PLAYERS[gameState.currentPlayer])}`);
+}
+
+// Update game information display
+function updateGameInfo() {
+    if (!currentPlayerDisplay || !gameMessage) {
+        return;
+    }
+    
+    const currentPlayer = PLAYERS[gameState.currentPlayer];
+    currentPlayerDisplay.textContent = currentPlayer.charAt(0).toUpperCase() + currentPlayer.slice(1);
+    currentPlayerDisplay.style.color = getPlayerColor(currentPlayer);
+    
+    // Update message based on game phase
+    switch (gameState.gamePhase) {
+        case 'placement':
+            const lutinsLeft = LUTINS_PER_PLAYER - gameState.currentPlayerLutinCount[currentPlayer];
+            if (HUMAN_PLAYERS.includes(currentPlayer)) {
+                gameMessage.textContent = `Phase de placement : Placez un lutin sur le plateau (${lutinsLeft} restants)`;
+            } else {
+                gameMessage.textContent = `L'IA place un lutin pour le joueur ${currentPlayer}... (${lutinsLeft} restants)`;
+            }
+            break;
+        case 'select':
+            if (HUMAN_PLAYERS.includes(currentPlayer)) {
+                gameMessage.textContent = 'Sélectionnez un lutin à déplacer.';
+            } else {
+                gameMessage.textContent = `L'IA réfléchit pour le joueur ${currentPlayer}...`;
+            }
+            break;
+        case 'move':
+            gameMessage.textContent = 'Déplacez le lutin vers une case adjacente.';
+            break;
+        case 'remove':
+            gameMessage.textContent = 'Retirez un pont.';
+            break;
+    }
 }
 
 // Update bridges visibility based on game state
@@ -295,7 +411,6 @@ function updateBridgesVisibility() {
                     const isVisible = gameState.bridges.horizontal[row - 1][col];
                     bridge.style.display = isVisible ? 'block' : 'none';
                     
-                    // Ajouter l'événement de clic si nous sommes en phase de suppression de pont
                     if (isVisible && gameState.gamePhase === 'remove' && HUMAN_PLAYERS.includes(PLAYERS[gameState.currentPlayer])) {
                         bridge.style.cursor = 'pointer';
                     } else {
@@ -311,7 +426,6 @@ function updateBridgesVisibility() {
                     const isVisible = gameState.bridges.horizontal[row][col];
                     bridge.style.display = isVisible ? 'block' : 'none';
                     
-                    // Ajouter l'événement de clic si nous sommes en phase de suppression de pont
                     if (isVisible && gameState.gamePhase === 'remove' && HUMAN_PLAYERS.includes(PLAYERS[gameState.currentPlayer])) {
                         bridge.style.cursor = 'pointer';
                     } else {
@@ -327,7 +441,6 @@ function updateBridgesVisibility() {
                     const isVisible = gameState.bridges.vertical[row][col - 1];
                     bridge.style.display = isVisible ? 'block' : 'none';
                     
-                    // Ajouter l'événement de clic si nous sommes en phase de suppression de pont
                     if (isVisible && gameState.gamePhase === 'remove' && HUMAN_PLAYERS.includes(PLAYERS[gameState.currentPlayer])) {
                         bridge.style.cursor = 'pointer';
                     } else {
@@ -343,7 +456,6 @@ function updateBridgesVisibility() {
                     const isVisible = gameState.bridges.vertical[row][col];
                     bridge.style.display = isVisible ? 'block' : 'none';
                     
-                    // Ajouter l'événement de clic si nous sommes en phase de suppression de pont
                     if (isVisible && gameState.gamePhase === 'remove' && HUMAN_PLAYERS.includes(PLAYERS[gameState.currentPlayer])) {
                         bridge.style.cursor = 'pointer';
                     } else {
@@ -352,34 +464,6 @@ function updateBridgesVisibility() {
                 }
             }
         }
-    }
-}
-
-// Update game information display
-function updateGameInfo() {
-    if (!currentPlayerDisplay || !gameMessage) {
-        return;
-    }
-    
-    const currentPlayer = PLAYERS[gameState.currentPlayer];
-    currentPlayerDisplay.textContent = currentPlayer.charAt(0).toUpperCase() + currentPlayer.slice(1);
-    currentPlayerDisplay.style.color = getPlayerColor(currentPlayer);
-    
-    // Update message based on game phase
-    switch (gameState.gamePhase) {
-        case 'select':
-            if (HUMAN_PLAYERS.includes(currentPlayer)) {
-                gameMessage.textContent = 'Sélectionnez un lutin à déplacer.';
-            } else {
-                gameMessage.textContent = `L'IA réfléchit pour le joueur ${currentPlayer}...`;
-            }
-            break;
-        case 'move':
-            gameMessage.textContent = 'Déplacez le lutin vers une case adjacente.';
-            break;
-        case 'remove':
-            gameMessage.textContent = 'Retirez un pont.';
-            break;
     }
 }
 
@@ -423,7 +507,7 @@ function enableHumanPlayerLutins() {
 
 // Handle lutin click
 function handleLutinClick(event) {
-    if (gameState.gameOver) return;
+    if (gameState.gameOver || gameState.gamePhase === 'placement') return;
     
     const lutin = event.target;
     const row = parseInt(lutin.dataset.row);
@@ -444,36 +528,6 @@ function handleLutinClick(event) {
         
         // Update game info
         updateGameInfo();
-    }
-}
-
-// Handle cell click for moving a lutin
-function handleCellClick(event) {
-    if (gameState.gameOver) return;
-    
-    // S'assurer que nous cliquons sur une cellule et pas un autre élément
-    const cell = event.target.closest('.cell');
-    if (!cell) return;
-    
-    const row = parseInt(cell.dataset.row);
-    const col = parseInt(cell.dataset.col);
-    
-    // Si nous sommes en phase de déplacement et qu'un lutin est sélectionné
-    if (gameState.gamePhase === 'move' && gameState.selectedLutin) {
-        const selectedLutin = gameState.selectedLutin;
-        
-        // Vérifier si le déplacement est valide
-        if (isValidMove(selectedLutin.row, selectedLutin.col, row, col)) {
-            // Déplacer le lutin
-            moveLutin(selectedLutin.row, selectedLutin.col, row, col);
-            
-            // Passer à la phase de suppression de pont
-            gameState.gamePhase = 'remove';
-            
-            // Mettre à jour l'interface
-            renderBoard();
-            updateGameInfo();
-        }
     }
 }
 
@@ -743,7 +797,7 @@ function playRandomMove() {
         }
     }
     
-            if (validLutin && validMoves.length > 0) {
+    if (validLutin && validMoves.length > 0) {
         // Choisir un mouvement aléatoire
         const randomMove = validMoves[Math.floor(Math.random() * validMoves.length)];
         
