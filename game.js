@@ -578,8 +578,9 @@ function removeBridge(bridgeType, bridgeRow, bridgeCol) {
     }
 }
 
-// Render the board
+// Enhanced render board with proper selection handling
 function renderBoard() {
+    // Remove all existing lutins
     document.querySelectorAll('.lutin').forEach(lutin => lutin.remove());
     
     Object.entries(gameState.lutins).forEach(([color, positions]) => {
@@ -594,9 +595,12 @@ function renderBoard() {
                 
                 const currentPlayer = PLAYERS[gameState.currentPlayer];
                 if (color === currentPlayer && HUMAN_PLAYERS.includes(currentPlayer) && 
-                    gameState.gamePhase !== 'placement' && gameState.gamePhase !== 'bridge_action') {
+                    (gameState.gamePhase === 'select' || gameState.gamePhase === 'move')) {
                     lutin.addEventListener('click', handleLutinClick);
                     lutin.style.cursor = 'pointer';
+                    
+                    // Add visual hint for selectable lutins
+                    lutin.classList.add('selectable');
                 }
                 
                 cell.appendChild(lutin);
@@ -606,6 +610,7 @@ function renderBoard() {
     
     updateBridgesVisibility();
     
+    // Restore selection if there's a selected lutin
     if (gameState.selectedLutin) {
         const selectedLutinElement = document.querySelector(
             `.lutin[data-row="${gameState.selectedLutin.row}"][data-col="${gameState.selectedLutin.col}"]`
@@ -651,7 +656,7 @@ function updateGameInfo() {
     }
 }
 
-// Update bridges visibility
+// Update bridges visibility with wood color
 function updateBridgesVisibility() {
     for (let row = 0; row < BOARD_SIZE; row++) {
         for (let col = 0; col < BOARD_SIZE; col++) {
@@ -663,7 +668,7 @@ function updateBridgesVisibility() {
                     const isVisible = gameState.bridges.horizontal[bridgeRow][bridgeCol];
                     
                     bridge.style.display = isVisible ? 'block' : 'none';
-                    bridge.style.backgroundColor = '#34495e';
+                    bridge.style.background = 'linear-gradient(135deg, #8B4513, #A0522D, #CD853F)';
                     bridge.style.transform = 'translateX(-50%)';
                     bridge.style.opacity = '1';
                     bridge.classList.remove('selected');
@@ -685,7 +690,7 @@ function updateBridgesVisibility() {
                     const isVisible = gameState.bridges.horizontal[bridgeRow][bridgeCol];
                     
                     bridge.style.display = isVisible ? 'block' : 'none';
-                    bridge.style.backgroundColor = '#34495e';
+                    bridge.style.background = 'linear-gradient(135deg, #8B4513, #A0522D, #CD853F)';
                     bridge.style.transform = 'translateX(-50%)';
                     bridge.style.opacity = '1';
                     bridge.classList.remove('selected');
@@ -707,7 +712,7 @@ function updateBridgesVisibility() {
                     const isVisible = gameState.bridges.vertical[bridgeRow][bridgeCol];
                     
                     bridge.style.display = isVisible ? 'block' : 'none';
-                    bridge.style.backgroundColor = '#34495e';
+                    bridge.style.background = 'linear-gradient(135deg, #8B4513, #A0522D, #CD853F)';
                     bridge.style.transform = 'translateY(-50%)';
                     bridge.style.opacity = '1';
                     bridge.classList.remove('selected');
@@ -729,7 +734,7 @@ function updateBridgesVisibility() {
                     const isVisible = gameState.bridges.vertical[bridgeRow][bridgeCol];
                     
                     bridge.style.display = isVisible ? 'block' : 'none';
-                    bridge.style.backgroundColor = '#34495e';
+                    bridge.style.background = 'linear-gradient(135deg, #8B4513, #A0522D, #CD853F)';
                     bridge.style.transform = 'translateY(-50%)';
                     bridge.style.opacity = '1';
                     bridge.classList.remove('selected');
@@ -757,25 +762,46 @@ function handlePlayerTurn() {
     }
 }
 
-// Enable human player lutins
+// Enhanced enable human player lutins with abandon functionality
 function enableHumanPlayerLutins() {
     const currentPlayer = PLAYERS[gameState.currentPlayer];
     
+    // First, disable all lutins
     document.querySelectorAll('.lutin').forEach(lutin => {
         lutin.style.cursor = 'default';
+        lutin.classList.remove('selectable');
+        
+        // Remove existing event listeners by cloning
         const newLutin = lutin.cloneNode(true);
         lutin.parentNode.replaceChild(newLutin, lutin);
     });
     
+    // Then enable only the current player's lutins
     document.querySelectorAll(`.lutin.${currentPlayer}`).forEach(lutin => {
         lutin.addEventListener('click', handleLutinClick);
         lutin.style.cursor = 'pointer';
+        lutin.classList.add('selectable');
+        
+        // Add hover effect for better UX
+        lutin.addEventListener('mouseenter', () => {
+            if (!lutin.classList.contains('selected')) {
+                lutin.style.transform = 'scale(1.1)';
+                lutin.style.boxShadow = '0 0 10px rgba(255, 255, 255, 0.5)';
+            }
+        });
+        
+        lutin.addEventListener('mouseleave', () => {
+            if (!lutin.classList.contains('selected')) {
+                lutin.style.transform = '';
+                lutin.style.boxShadow = '';
+            }
+        });
     });
     
-    console.log(`Lutins enabled for player ${currentPlayer}`);
+    console.log(`Lutins enabled for player ${currentPlayer} with abandon functionality`);
 }
 
-// Handle lutin click
+// Handle lutin click with abandon functionality
 function handleLutinClick(event) {
     if (gameState.gameOver || gameState.gamePhase === 'placement') return;
     
@@ -786,13 +812,34 @@ function handleLutinClick(event) {
     
     if (color !== PLAYERS[gameState.currentPlayer]) return;
     
-    if (gameState.gamePhase === 'select') {
+    if (gameState.gamePhase === 'select' || gameState.gamePhase === 'move') {
+        // Clear previous selection
+        clearLutinSelection();
+        
+        // Select the new lutin
         gameState.selectedLutin = { row, col, color };
         gameState.gamePhase = 'move';
         
         lutin.classList.add('selected');
         updateGameInfo();
+        
+        console.log(`Lutin selected at [${row}, ${col}]. Previous selection abandoned.`);
     }
+}
+
+// Clear lutin selection visual feedback
+function clearLutinSelection() {
+    // Remove 'selected' class from all lutins
+    document.querySelectorAll('.lutin.selected').forEach(selectedLutin => {
+        selectedLutin.classList.remove('selected');
+    });
+    
+    // Reset any visual effects
+    document.querySelectorAll('.lutin').forEach(lutin => {
+        lutin.style.transform = '';
+        lutin.style.boxShadow = '';
+        lutin.style.zIndex = '';
+    });
 }
 
 // Check if a move is valid
@@ -887,8 +934,10 @@ function hasAvailableMoves(row, col) {
     });
 }
 
-// Move to next turn
+// Enhanced move to next turn with proper cleanup
 function nextTurn() {
+    // Clear any selections and reset visual states
+    clearLutinSelection();
     gameState.gamePhase = 'select';
     gameState.selectedLutin = null;
     gameState.lastMovedBridge = null;
@@ -904,7 +953,7 @@ function nextTurn() {
     handlePlayerTurn();
 }
 
-// AI turn implementation
+// Enhanced AI turn with bridge animations
 async function playAITurn() {
     if (gameState.gameOver) return;
     
@@ -913,7 +962,7 @@ async function playAITurn() {
     
     const aiPromise = new Promise((resolve) => {
         try {
-            resolve(useBasicAI());
+            resolve(useBasicAIWithAnimations());
         } catch (error) {
             console.error('Error with AI:', error);
             resolve(false);
@@ -928,8 +977,273 @@ async function playAITurn() {
     
     if (result === 'timeout') {
         console.log('AI took too long, playing random move');
-        playRandomMove();
+        playRandomMoveWithAnimations();
     }
+}
+
+// Enhanced random move for AI with animations
+async function playRandomMoveWithAnimations() {
+    const currentPlayer = PLAYERS[gameState.currentPlayer];
+    const lutins = gameState.lutins[currentPlayer];
+    
+    let validLutin = null;
+    let validMoves = [];
+    
+    for (const lutin of lutins) {
+        const moves = getValidMoves(lutin.row, lutin.col);
+        if (moves.length > 0) {
+            validLutin = lutin;
+            validMoves = moves;
+            break;
+        }
+    }
+    
+    if (validLutin && validMoves.length > 0) {
+        const randomMove = validMoves[Math.floor(Math.random() * validMoves.length)];
+        
+        // Move the lutin
+        moveLutin(validLutin.row, validLutin.col, randomMove.row, randomMove.col);
+        renderBoard();
+        
+        // Get available bridges
+        const bridges = getAvailableBridges();
+        if (bridges.length > 0) {
+            const randomBridge = bridges[Math.floor(Math.random() * bridges.length)];
+            const action = Math.random() < 0.7 ? 'remove' : 'rotate';
+            
+            // Find the bridge element for animation
+            const bridgeElement = findBridgeElementByCoordinates(randomBridge.type, randomBridge.row, randomBridge.col);
+            
+            if (bridgeElement) {
+                if (action === 'remove') {
+                    // Show AI removal message
+                    if (gameMessage) {
+                        gameMessage.textContent = `L'IA supprime un pont ${randomBridge.type === 'horizontal' ? 'horizontal' : 'vertical'} à [${randomBridge.row},${randomBridge.col}]`;
+                        gameMessage.style.color = getPlayerColor(currentPlayer);
+                        gameMessage.style.fontWeight = 'bold';
+                    }
+                    
+                    // Add AI-specific removal animation
+                    animateAIBridgeRemoval(bridgeElement);
+                    
+                    setTimeout(() => {
+                        removeBridge(randomBridge.type, randomBridge.row, randomBridge.col);
+                        finishAITurn();
+                    }, 800);
+                } else {
+                    // Show AI rotation message
+                    if (gameMessage) {
+                        gameMessage.textContent = `L'IA tourne un pont ${randomBridge.type === 'horizontal' ? 'horizontal → vertical' : 'vertical → horizontal'} à [${randomBridge.row},${randomBridge.col}]`;
+                        gameMessage.style.color = getPlayerColor(currentPlayer);
+                        gameMessage.style.fontWeight = 'bold';
+                    }
+                    
+                    // Add AI-specific rotation animation
+                    animateAIBridgeRotation(bridgeElement);
+                    
+                    setTimeout(() => {
+                        rotateBridge(randomBridge.type, randomBridge.row, randomBridge.col);
+                        finishAITurn();
+                    }, 1000);
+                }
+            } else {
+                // Fallback if bridge element not found
+                if (action === 'remove') {
+                    removeBridge(randomBridge.type, randomBridge.row, randomBridge.col);
+                } else {
+                    rotateBridge(randomBridge.type, randomBridge.row, randomBridge.col);
+                }
+                finishAITurn();
+            }
+        } else {
+            finishAITurn();
+        }
+    } else {
+        finishAITurn();
+    }
+}
+
+// Enhanced basic AI with animations
+async function useBasicAIWithAnimations() {
+    const currentPlayer = PLAYERS[gameState.currentPlayer];
+    
+    const movableLutins = gameState.lutins[currentPlayer].filter(lutin => {
+        return hasAvailableMoves(lutin.row, lutin.col);
+    });
+    
+    if (movableLutins.length === 0) {
+        console.log(`AI ${currentPlayer} has no possible moves, skipping turn`);
+        checkPlayerElimination();
+        nextTurn();
+        return;
+    }
+    
+    const selectedLutin = movableLutins[Math.floor(Math.random() * movableLutins.length)];
+    const possibleMoves = getValidMoves(selectedLutin.row, selectedLutin.col);
+    const targetCell = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
+    
+    const availableBridges = getAvailableBridges();
+    const bridgeAction = {
+        action: Math.random() < 0.7 ? 'remove' : 'rotate',
+        bridge: availableBridges[Math.floor(Math.random() * availableBridges.length)]
+    };
+    
+    executeAIMove(selectedLutin, targetCell, bridgeAction);
+}
+
+// Find bridge element by coordinates for AI animations
+function findBridgeElementByCoordinates(bridgeType, bridgeRow, bridgeCol) {
+    if (bridgeType === 'horizontal') {
+        // Look for horizontal bridges
+        let bridge = document.querySelector(`.bridge-horizontal.bottom[data-row="${bridgeRow}"][data-col="${bridgeCol}"]`);
+        if (bridge && bridge.style.display !== 'none') return bridge;
+        
+        bridge = document.querySelector(`.bridge-horizontal.top[data-row="${bridgeRow + 1}"][data-col="${bridgeCol}"]`);
+        if (bridge && bridge.style.display !== 'none') return bridge;
+    } else if (bridgeType === 'vertical') {
+        // Look for vertical bridges
+        let bridge = document.querySelector(`.bridge-vertical.right[data-row="${bridgeRow}"][data-col="${bridgeCol}"]`);
+        if (bridge && bridge.style.display !== 'none') return bridge;
+        
+        bridge = document.querySelector(`.bridge-vertical.left[data-row="${bridgeRow}"][data-col="${bridgeCol + 1}"]`);
+        if (bridge && bridge.style.display !== 'none') return bridge;
+    }
+    
+    return null;
+}
+
+// AI-specific bridge removal animation with different colors
+function animateAIBridgeRemoval(bridgeElement) {
+    // Add AI removal class for different styling
+    bridgeElement.classList.add('ai-removing');
+    
+    // Create visual effect
+    bridgeElement.style.transition = 'all 0.8s ease-out';
+    bridgeElement.style.backgroundColor = '#e74c3c';
+    bridgeElement.style.transform = bridgeElement.style.transform + ' scale(1.8)';
+    bridgeElement.style.boxShadow = '0 0 25px rgba(231, 76, 60, 0.9)';
+    bridgeElement.style.opacity = '0.9';
+    
+    // Add pulsing effect
+    bridgeElement.style.animation = 'aiRemovalPulse 0.3s ease-in-out 2';
+    
+    setTimeout(() => {
+        bridgeElement.style.opacity = '0';
+        bridgeElement.style.transform = bridgeElement.style.transform.replace('scale(1.8)', 'scale(0)');
+        bridgeElement.style.boxShadow = 'none';
+    }, 400);
+    
+    // Create sparks effect
+    createAISparkEffect(bridgeElement, 'removal');
+}
+
+// AI-specific bridge rotation animation with different colors
+function animateAIBridgeRotation(bridgeElement) {
+    // Add AI rotation class for different styling
+    bridgeElement.classList.add('ai-rotating');
+    
+    // Create visual effect
+    bridgeElement.style.transition = 'all 1s ease-in-out';
+    bridgeElement.style.backgroundColor = '#f39c12';
+    bridgeElement.style.transform = bridgeElement.style.transform + ' rotate(180deg) scale(1.5)';
+    bridgeElement.style.boxShadow = '0 0 30px rgba(243, 156, 18, 0.9)';
+    bridgeElement.style.opacity = '0.8';
+    
+    // Add spinning effect
+    bridgeElement.style.animation = 'aiRotationSpin 0.5s ease-in-out 2';
+    
+    setTimeout(() => {
+        bridgeElement.style.opacity = '0';
+        bridgeElement.style.transform = bridgeElement.style.transform + ' scale(0)';
+        bridgeElement.style.boxShadow = 'none';
+    }, 600);
+    
+    // Create rotation sparks effect
+    createAISparkEffect(bridgeElement, 'rotation');
+}
+
+// Create AI spark effects for bridge actions
+function createAISparkEffect(bridgeElement, effectType) {
+    const rect = bridgeElement.getBoundingClientRect();
+    const sparkContainer = document.createElement('div');
+    sparkContainer.className = 'ai-spark-container';
+    sparkContainer.style.position = 'fixed';
+    sparkContainer.style.left = rect.left + 'px';
+    sparkContainer.style.top = rect.top + 'px';
+    sparkContainer.style.width = rect.width + 'px';
+    sparkContainer.style.height = rect.height + 'px';
+    sparkContainer.style.pointerEvents = 'none';
+    sparkContainer.style.zIndex = '100';
+    
+    document.body.appendChild(sparkContainer);
+    
+    // Create sparks
+    const sparkCount = effectType === 'removal' ? 6 : 4;
+    
+    for (let i = 0; i < sparkCount; i++) {
+        setTimeout(() => {
+            const spark = document.createElement('div');
+            spark.className = `ai-spark ${effectType}`;
+            spark.style.position = 'absolute';
+            spark.style.width = '6px';
+            spark.style.height = '6px';
+            spark.style.borderRadius = '50%';
+            spark.style.backgroundColor = effectType === 'removal' ? '#e74c3c' : '#f39c12';
+            spark.style.boxShadow = `0 0 10px ${effectType === 'removal' ? '#e74c3c' : '#f39c12'}`;
+            
+            // Random position within bridge bounds
+            const x = Math.random() * rect.width;
+            const y = Math.random() * rect.height;
+            spark.style.left = x + 'px';
+            spark.style.top = y + 'px';
+            
+            // Animate spark
+            spark.style.transition = 'all 1s ease-out';
+            
+            sparkContainer.appendChild(spark);
+            
+            // Animate spark movement
+            setTimeout(() => {
+                const angle = Math.random() * 2 * Math.PI;
+                const distance = 40 + Math.random() * 30;
+                const finalX = x + Math.cos(angle) * distance;
+                const finalY = y + Math.sin(angle) * distance;
+                
+                spark.style.transform = `translate(${finalX - x}px, ${finalY - y}px) scale(0)`;
+                spark.style.opacity = '0';
+            }, 50);
+            
+            // Remove spark after animation
+            setTimeout(() => {
+                if (spark.parentNode) {
+                    spark.parentNode.removeChild(spark);
+                }
+            }, 1100);
+        }, i * 80);
+    }
+    
+    // Remove spark container after all animations
+    setTimeout(() => {
+        if (document.body.contains(sparkContainer)) {
+            document.body.removeChild(sparkContainer);
+        }
+    }, 2000);
+}
+
+// Finish AI turn with proper cleanup
+function finishAITurn() {
+    setTimeout(() => {
+        renderBoard();
+        checkPlayerElimination();
+        
+        setTimeout(() => {
+            if (gameMessage) {
+                gameMessage.style.fontWeight = 'normal';
+                gameMessage.style.color = '';
+            }
+            nextTurn();
+        }, 1000);
+    }, 500);
 }
 
 // Play random move for AI
@@ -1046,7 +1360,7 @@ function useBasicAI() {
     executeAIMove(selectedLutin, targetCell, bridgeAction);
 }
 
-// Execute AI move with animation
+// Enhanced Execute AI move with improved bridge animations
 function executeAIMove(selectedLutin, targetCell, bridgeAction) {
     gameState.selectedLutin = selectedLutin;
     gameState.gamePhase = 'move';
@@ -1057,6 +1371,7 @@ function executeAIMove(selectedLutin, targetCell, bridgeAction) {
         gameMessage.textContent = `L'IA déplace un lutin de [${selectedLutin.row},${selectedLutin.col}] vers [${targetCell.row},${targetCell.col}]`;
         gameMessage.style.color = getPlayerColor(PLAYERS[gameState.currentPlayer]);
         gameMessage.style.fontWeight = 'bold';
+        gameMessage.classList.add('ai-action');
     }
     
     setTimeout(() => {
@@ -1066,7 +1381,13 @@ function executeAIMove(selectedLutin, targetCell, bridgeAction) {
             selectedLutinElement.style.transition = 'all 0.8s ease-in-out';
             selectedLutinElement.style.transform = 'scale(1.2)';
             selectedLutinElement.style.zIndex = '10';
-            selectedLutinElement.style.boxShadow = '0 0 20px rgba(255, 255, 0, 0.8)';
+            selectedLutinElement.style.boxShadow = '0 0 20px rgba(52, 152, 219, 0.8)';
+            
+            // Add AI indicator
+            const aiIndicator = document.createElement('div');
+            aiIndicator.className = 'ai-turn-indicator';
+            aiIndicator.textContent = 'IA';
+            selectedLutinElement.appendChild(aiIndicator);
         }
         
         setTimeout(() => {
@@ -1078,32 +1399,46 @@ function executeAIMove(selectedLutin, targetCell, bridgeAction) {
                 const actionText = bridgeAction.action === 'remove' ? 'supprime' : 'tourne d\'un quart de tour';
                 const directionText = bridgeAction.bridge.type === 'horizontal' ? 'horizontal' : 'vertical';
                 gameMessage.textContent = `L'IA ${actionText} un pont ${directionText} à [${bridgeAction.bridge.row},${bridgeAction.bridge.col}]`;
+                gameMessage.classList.add('ai-action');
             }
             
-            setTimeout(() => {
+            setTimeout(async () => {
                 try {
-                    if (bridgeAction.action === 'remove') {
-                        removeBridge(bridgeAction.bridge.type, bridgeAction.bridge.row, bridgeAction.bridge.col);
+                    // Find the bridge element for animation
+                    const bridgeElement = findBridgeElementByCoordinates(bridgeAction.bridge.type, bridgeAction.bridge.row, bridgeAction.bridge.col);
+                    
+                    if (bridgeElement) {
+                        // Highlight the bridge first
+                        bridgeElement.classList.add('ai-highlighting');
+                        
+                        setTimeout(async () => {
+                            if (bridgeAction.action === 'remove') {
+                                animateAIBridgeRemoval(bridgeElement);
+                                setTimeout(() => {
+                                    removeBridge(bridgeAction.bridge.type, bridgeAction.bridge.row, bridgeAction.bridge.col);
+                                    finishAITurn();
+                                }, 800);
+                            } else {
+                                animateAIBridgeRotation(bridgeElement);
+                                setTimeout(() => {
+                                    rotateBridge(bridgeAction.bridge.type, bridgeAction.bridge.row, bridgeAction.bridge.col);
+                                    finishAITurn();
+                                }, 1000);
+                            }
+                        }, 1000);
                     } else {
-                        rotateBridge(bridgeAction.bridge.type, bridgeAction.bridge.row, bridgeAction.bridge.col);
+                        // Fallback if bridge element not found
+                        if (bridgeAction.action === 'remove') {
+                            removeBridge(bridgeAction.bridge.type, bridgeAction.bridge.row, bridgeAction.bridge.col);
+                        } else {
+                            rotateBridge(bridgeAction.bridge.type, bridgeAction.bridge.row, bridgeAction.bridge.col);
+                        }
+                        finishAITurn();
                     }
                     
-                    setTimeout(() => {
-                        renderBoard();
-                        checkPlayerElimination();
-                        
-                        setTimeout(() => {
-                            if (gameMessage) {
-                                gameMessage.style.fontWeight = 'normal';
-                                gameMessage.style.color = '';
-                            }
-                            nextTurn();
-                        }, 1000);
-                    }, 800);
-                    
                 } catch (error) {
-                    console.error("Error executing bridge action:", error);
-                    nextTurn();
+                    console.error("Error executing AI bridge action:", error);
+                    finishAITurn();
                 }
             }, 2000);
         }, 800);
