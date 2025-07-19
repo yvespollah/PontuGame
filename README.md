@@ -1,71 +1,69 @@
-# Projet PontuXL
+# PontuXL Game
 
-Ce projet est une implémentation du jeu de société Pontu, développé dans le cadre du cours INFO B317 - IA et programmation symbolique.
+PontuXL is a web-based implementation of the board game Pontu, enhanced with a modern user interface, smooth animations, and a powerful AI. This project was developed as part of the INFO B317 course on AI and Symbolic Programming.
 
-## Description du jeu
+## Game Overview
 
-Pontu est un jeu de société dont le but est d'isoler les lutins de son adversaire en déplaçant ses propres lutins et en retirant des ponts. Le jeu se pratique sur un plateau de 5x5 cases, les cases étant reliées entre elles par des ponts. Chaque joueur dispose de lutins de couleur différente.
+Pontu is a strategy game where the objective is to isolate your opponent's pieces ("lutins") by moving your own and strategically altering the game board. The last player with connected lutins wins.
 
-Les règles principales sont:
-- Un joueur déplace un de ses lutins d'une case à une autre en empruntant un pont
-- Puis, à son choix, il retire un pont - celui qu'il a utilisé ou un autre - ou tourne un pont d'un quart de tour
-- Deux lutins ne peuvent pas se trouver sur une même case
-- Un joueur est éliminé lorsque tous ses lutins se retrouvent sans pont autour d'eux
+The game is played on a 6x6 grid connected by bridges. Four players (Green, Blue, Yellow, Red) take turns to move their lutins and manipulate bridges.
 
-## Particularités du projet
+-   **Human Players:** Green and Yellow
+-   **AI Players:** Blue and Red
 
-- Le jeu sera joué par quatre joueurs, utilisant des lutins de couleur bleu, vert, rouge et jaune
-- Les lutins de couleur bleu et rouge seront déplacés par une intelligence artificielle
-- Les joueurs jouent tour à tour dans l'ordre: verts, bleus, jaunes puis rouges
-- Le plateau de jeu est de taille 6 sur 6
-- Les cases sont numérotées selon les abscisses et ordonnées en prenant le coin inférieur gauche comme origine
+### Game Phases
 
-## Intelligence Artificielle
+1.  **Placement Phase:** Players take turns placing their two lutins on empty cells.
+2.  **Main Phase:** Once all lutins are placed, players take turns in a cycle (Green -> Blue -> Yellow -> Red).
 
-Le jeu comprend une IA avancée implémentée en Prolog, utilisant l'algorithme Maxⁿ avec élagage superficiel, spécialement conçu pour les jeux à plus de deux joueurs.
+### A Player's Turn
 
-### Algorithme Maxⁿ
+A turn consists of two actions:
 
-Contrairement à l'algorithme Minimax traditionnel qui est conçu pour les jeux à deux joueurs (un joueur maximise son score, l'autre le minimise), l'algorithme Maxⁿ est adapté aux jeux multi-joueurs. Chaque joueur tente de maximiser son propre score, sans nécessairement minimiser celui des autres.
+1.  **Move a Lutin:** Move one of your lutins across an adjacent bridge to an empty cell.
+2.  **Action on a Bridge:** After moving, you must perform one of the following actions:
+    *   **Remove a Bridge:** Click on any bridge on the board to remove it permanently.
+    *   **Rotate a Bridge:** Click on any bridge to rotate it 90 degrees, changing its orientation (horizontal to vertical or vice-versa).
 
-L'algorithme Maxⁿ fonctionne comme suit :
+A player is eliminated when all of their lutins are isolated (i.e., have no bridges connected to their cells).
 
-1. À chaque état du jeu, on évalue un n-uplet de scores (un score pour chaque joueur)
-2. Chaque joueur choisit le coup qui maximise son propre score
-3. L'élagage superficiel (Shallow Pruning) est utilisé pour optimiser la recherche
+## Key Features
 
-### Implémentation en Prolog
+-   **Modern & Responsive UI:** A clean, intuitive interface that works on various screen sizes.
+-   **Rich Animations:** Smooth animations for lutin movements, bridge removals, and rotations enhance the user experience.
+-   **Interactive Game Board:** Cells and bridges highlight on hover, and selectable items are clearly indicated.
+-   **Bridge Rotation Mechanic:** Adds a new strategic layer to the game, allowing players to reshape the board's connectivity.
+-   **Action Modal:** A clear and accessible modal appears when a bridge is clicked, prompting the player to choose between removing or rotating it.
+-   **AI Visual Feedback:** When the AI removes a bridge, it briefly pulses red to clearly indicate its move.
+-   **Animated Victory Screen:** A polished, animated overlay announces the winner and allows for a quick rematch.
 
-L'implémentation Prolog de l'algorithme Maxⁿ se trouve dans le fichier `pontu_ai.pl`. Les principales fonctions sont :
+## How to Play
 
-- `trouver_meilleur_coup/2` : Point d'entrée pour trouver le meilleur coup
-- `maxn_shallow/4` : Implémentation de l'algorithme Maxⁿ avec élagage superficiel
-- `evaluer_etat_tous_joueurs/2` : Évalue l'état du jeu pour tous les joueurs
-- `obtenir_coup_ia_maxn/5` : Interface pour obtenir le coup de l'IA
+1.  **Open the Game:** Launch `index.html` in a modern web browser (e.g., Chrome, Firefox).
+2.  **Placement Phase:** Click on any empty cell to place your lutins. The game will guide you through the player order.
+3.  **Main Phase (Your Turn):**
+    *   **Select a Lutin:** Click on one of your lutins. Valid destination cells will be highlighted.
+    *   **Move:** Click on a highlighted cell to move your lutin.
+    *   **Bridge Action:** After moving, click on any bridge. A modal will ask if you want to **Remove** or **Rotate** it. The AI will automatically perform its action.
+4.  **Win Condition:** The game ends when only one player has connected lutins left.
 
-### Intégration JavaScript-Prolog
+## Artificial Intelligence
 
-L'intégration entre JavaScript et Prolog est réalisée grâce à la bibliothèque Tau Prolog, qui permet d'exécuter du code Prolog directement dans le navigateur. L'interface est implémentée dans le fichier `prolog_interface.js`.
+The AI players (Blue and Red) are powered by a sophisticated Prolog engine running directly in the browser via Tau Prolog.
 
-Le processus d'intégration fonctionne comme suit :
+### Maxⁿ Algorithm
 
-1. Le code Prolog est chargé dans une session Tau Prolog
-2. L'état du jeu JavaScript est converti en format Prolog
-3. Une requête Prolog est exécutée pour trouver le meilleur coup
-4. Le résultat est converti en format JavaScript et utilisé par le jeu
+Instead of the traditional Minimax algorithm for two-player games, PontuXL uses the **Maxⁿ algorithm**, which is designed for multi-player scenarios. In this model, each player aims to maximize their own score, assuming the other players will do the same. This approach is ideal for a 4-player free-for-all game.
 
-## Composants du projet
+The search is optimized using **Shallow Pruning** to reduce the search space and improve performance.
 
-1. Interface web - représentation graphique du jeu (`index.html`, `game.js`, `styles.css`)
-2. Bot explicateur - répond aux questions sur le jeu (implémenté en Prolog dans `pbot-elm.pl`)
-3. Modules d'intelligence artificielle - pour guider les robots :
-   - Algorithme Maxⁿ avec élagage superficiel (implémenté en Prolog dans `pontu_ai.pl`)
-   - Interface JavaScript-Prolog (`prolog_interface.js`)
+### Prolog Integration
 
-## Comment jouer
+The JavaScript front-end communicates with the Prolog engine (`pontu_ai.pl`) via an interface in `prolog_interface.js`.
 
-1. Ouvrez `index.html` dans un navigateur web moderne
-2. Le jeu se joue à tour de rôle entre les joueurs humains (vert et jaune) et les IA (bleu et rouge)
+1.  The current game state (lutin positions, bridge layout) is converted into Prolog terms.
+2.  The Prolog engine executes the Maxⁿ algorithm to determine the best possible move for the AI player.
+3.  The chosen move is returned to the JavaScript code, which then executes it on the game board with corresponding animations.
 3. À chaque tour, un joueur doit :
    - Sélectionner un lutin à déplacer
    - Déplacer le lutin vers une case adjacente accessible par un pont

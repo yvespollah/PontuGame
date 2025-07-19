@@ -122,13 +122,13 @@ pont_existe(Ponts, X1, Y1, X2, Y2) :-
     (
         (X1 =:= X2, abs(Y1 - Y2) =:= 1) -> % Mouvement vertical
             MinY is min(Y1, Y2),
-            ponts(PontsH, _) = Ponts,
-            acceder_plateau(PontsH, X1, MinY, true)
+            ponts(_, PontsV) = Ponts,
+            acceder_plateau(PontsV, X1, MinY, true)
         ;
         (Y1 =:= Y2, abs(X1 - X2) =:= 1) -> % Mouvement horizontal
             MinX is min(X1, X2),
-            ponts(_, PontsV) = Ponts,
-            acceder_plateau(PontsV, MinX, Y1, true)
+            ponts(PontsH, _) = Ponts,
+            acceder_plateau(PontsH, MinX, Y1, true)
         ;
             false % Les cases ne sont pas adjacentes
     ).
